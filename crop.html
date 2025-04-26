@@ -21,12 +21,8 @@
         .crop-frame {
             position: absolute;
             border: 2px solid red;
-            cursor: move;
             z-index: 100;
-            pointer-events: none; /* This makes the frame non-interactive */
-        }
-        .control-btn {
-            margin: 5px;
+            pointer-events: none;
         }
         .tab-content {
             padding: 20px;
@@ -41,33 +37,49 @@
     <div class="container-fluid mt-3">
         <h1 class="text-center mb-4">Social Media Image Cropper</h1>
         
+        <!-- New action bar with checkboxes and post button -->
+        <div class="bg-light p-3 rounded mb-4 d-flex justify-content-between align-items-center">
+            <div>
+                <div class="form-check form-check-inline">
+                    <input class="form-check-input" type="checkbox" id="bluesky-check">
+                    <label class="form-check-label" for="bluesky-check">Bluesky</label>
+                </div>
+                <div class="form-check form-check-inline">
+                    <input class="form-check-input" type="checkbox" id="instagram-check">
+                    <label class="form-check-label" for="instagram-check">Instagram</label>
+                </div>
+                <div class="form-check form-check-inline">
+                    <input class="form-check-input" type="checkbox" id="facebook-check">
+                    <label class="form-check-label" for="facebook-check">Facebook</label>
+                </div>
+                <div class="form-check form-check-inline">
+                    <input class="form-check-input" type="checkbox" id="threads-check">
+                    <label class="form-check-label" for="threads-check">Threads</label>
+                </div>
+                <div class="form-check form-check-inline">
+                    <input class="form-check-input" type="checkbox" id="twitter-check">
+                    <label class="form-check-label" for="twitter-check">Twitter</label>
+                </div>
+            </div>
+            <div>
+                <button id="post-button" class="btn btn-primary">Post</button>
+            </div>
+        </div>
+        
         <div class="row">
             <!-- Left Panel - Image Cropping -->
             <div class="col-md-7">
                 <div class="card">
                     <div class="card-header">
                         <div class="d-flex justify-content-between align-items-center">
-                            <h5>Image Cropping</h5>
+                            <h5 class="mb-0">Image Cropping</h5>
                             <div>
-                                <button id="zoomIn" class="btn btn-sm btn-outline-primary control-btn"><i class="bi bi-zoom-in"></i></button>
-                                <button id="zoomOut" class="btn btn-sm btn-outline-primary control-btn"><i class="bi bi-zoom-out"></i></button>
-                                <button id="moveLeft" class="btn btn-sm btn-outline-primary control-btn"><i class="bi bi-arrow-left"></i></button>
-                                <button id="moveRight" class="btn btn-sm btn-outline-primary control-btn"><i class="bi bi-arrow-right"></i></button>
-                                <button id="moveUp" class="btn btn-sm btn-outline-primary control-btn"><i class="bi bi-arrow-up"></i></button>
-                                <button id="moveDown" class="btn btn-sm btn-outline-primary control-btn"><i class="bi bi-arrow-down"></i></button>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="card-body bg-light p-2">
-                        <div class="row">
-                            <div class="col-md-4">
-                                <strong>File:</strong> <span id="image-filename">Loading...</span>
-                            </div>
-                            <div class="col-md-4">
-                                <strong>Size:</strong> <span id="image-size">Loading...</span>
-                            </div>
-                            <div class="col-md-4">
-                                <strong>Zoom:</strong> <span id="image-zoom">100%</span>
+                                <button id="zoomIn" class="btn btn-sm btn-outline-primary mx-1"><i class="bi bi-zoom-in"></i></button>
+                                <button id="zoomOut" class="btn btn-sm btn-outline-primary mx-1"><i class="bi bi-zoom-out"></i></button>
+                                <button id="moveLeft" class="btn btn-sm btn-outline-primary mx-1"><i class="bi bi-arrow-left"></i></button>
+                                <button id="moveRight" class="btn btn-sm btn-outline-primary mx-1"><i class="bi bi-arrow-right"></i></button>
+                                <button id="moveUp" class="btn btn-sm btn-outline-primary mx-1"><i class="bi bi-arrow-up"></i></button>
+                                <button id="moveDown" class="btn btn-sm btn-outline-primary mx-1"><i class="bi bi-arrow-down"></i></button>
                             </div>
                         </div>
                     </div>
@@ -108,52 +120,52 @@
                         <div class="tab-content" id="socialMediaTabContent">
                             <div class="tab-pane fade show active" id="bluesky" role="tabpanel" aria-labelledby="bluesky-tab">
                                 <h5>Bluesky Image Dimensions</h5>
-                                <p>Recommended: 1200 x 675 pixels (16:9 ratio)</p>
+                                <p><small class="text-muted">Recommended: 1200 x 675 pixels (16:9 ratio)</small></p>
                                 <hr>
                                 <div class="crop-info">
                                     <p><strong>Crop Position:</strong> <span id="bluesky-position">X: 0, Y: 0</span></p>
                                     <p><strong>ImageMagick Command:</strong></p>
-                                    <pre id="bluesky-command" class="bg-light p-2"></pre>
+                                    <pre id="bluesky-command" class="bg-light p-2 rounded small"></pre>
                                 </div>
                             </div>
                             <div class="tab-pane fade" id="instagram" role="tabpanel" aria-labelledby="instagram-tab">
                                 <h5>Instagram Image Dimensions</h5>
-                                <p>Recommended: 1080 x 1080 pixels (1:1 square)</p>
+                                <p><small class="text-muted">Recommended: 1080 x 1080 pixels (1:1 square)</small></p>
                                 <hr>
                                 <div class="crop-info">
                                     <p><strong>Crop Position:</strong> <span id="instagram-position">X: 0, Y: 0</span></p>
                                     <p><strong>ImageMagick Command:</strong></p>
-                                    <pre id="instagram-command" class="bg-light p-2"></pre>
+                                    <pre id="instagram-command" class="bg-light p-2 rounded small"></pre>
                                 </div>
                             </div>
                             <div class="tab-pane fade" id="facebook" role="tabpanel" aria-labelledby="facebook-tab">
                                 <h5>Facebook Image Dimensions</h5>
-                                <p>Recommended: 1200 x 630 pixels (1.91:1 ratio)</p>
+                                <p><small class="text-muted">Recommended: 1200 x 630 pixels (1.91:1 ratio)</small></p>
                                 <hr>
                                 <div class="crop-info">
                                     <p><strong>Crop Position:</strong> <span id="facebook-position">X: 0, Y: 0</span></p>
                                     <p><strong>ImageMagick Command:</strong></p>
-                                    <pre id="facebook-command" class="bg-light p-2"></pre>
+                                    <pre id="facebook-command" class="bg-light p-2 rounded small"></pre>
                                 </div>
                             </div>
                             <div class="tab-pane fade" id="threads" role="tabpanel" aria-labelledby="threads-tab">
                                 <h5>Threads Image Dimensions</h5>
-                                <p>Recommended: 1080 x 1350 pixels (4:5 ratio)</p>
+                                <p><small class="text-muted">Recommended: 1080 x 1350 pixels (4:5 ratio)</small></p>
                                 <hr>
                                 <div class="crop-info">
                                     <p><strong>Crop Position:</strong> <span id="threads-position">X: 0, Y: 0</span></p>
                                     <p><strong>ImageMagick Command:</strong></p>
-                                    <pre id="threads-command" class="bg-light p-2"></pre>
+                                    <pre id="threads-command" class="bg-light p-2 rounded small"></pre>
                                 </div>
                             </div>
                             <div class="tab-pane fade" id="twitter" role="tabpanel" aria-labelledby="twitter-tab">
                                 <h5>Twitter Image Dimensions</h5>
-                                <p>Recommended: 1200 x 675 pixels (16:9 ratio)</p>
+                                <p><small class="text-muted">Recommended: 1200 x 675 pixels (16:9 ratio)</small></p>
                                 <hr>
                                 <div class="crop-info">
                                     <p><strong>Crop Position:</strong> <span id="twitter-position">X: 0, Y: 0</span></p>
                                     <p><strong>ImageMagick Command:</strong></p>
-                                    <pre id="twitter-command" class="bg-light p-2"></pre>
+                                    <pre id="twitter-command" class="bg-light p-2 rounded small"></pre>
                                 </div>
                             </div>
                         </div>
