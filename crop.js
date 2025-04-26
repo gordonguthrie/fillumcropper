@@ -192,12 +192,57 @@ $(document).ready(function() {
         const maxScale = Math.max(widthRatio, heightRatio);
         
         if (scale < maxScale) {
+            // Get current dimensions and positions before zooming
+            const cropRect = $cropFrame[0].getBoundingClientRect();
+            const imageRect = $sourceImage[0].getBoundingClientRect();
+            
+            // Calculate the center of the crop frame
+            const cropCenterX = cropRect.left + cropRect.width / 2;
+            const cropCenterY = cropRect.top + cropRect.height / 2;
+            
+            // Calculate the relative position of the crop center within the image
+            const relativeX = (cropCenterX - imageRect.left) / imageRect.width;
+            const relativeY = (cropCenterY - imageRect.top) / imageRect.height;
+            
+            // Calculate the old distance from the image edge to the crop center
+            const oldDistanceX = relativeX * imageRect.width;
+            const oldDistanceY = relativeY * imageRect.height;
+            
+            // Apply the zoom
+            const oldScale = scale;
             scale *= 1.1;
             // Ensure we don't exceed the maximum zoom
             scale = Math.min(scale, maxScale);
+            
+            // Calculate the new image dimensions after zoom
+            const newWidth = imageRect.width * (scale / oldScale);
+            const newHeight = imageRect.height * (scale / oldScale);
+            
+            // Calculate the new distance from the image edge to the crop center
+            const newDistanceX = relativeX * newWidth;
+            const newDistanceY = relativeY * newHeight;
+            
+            // Calculate the position adjustment needed
+            const adjustX = oldDistanceX - newDistanceX;
+            const adjustY = oldDistanceY - newDistanceY;
+            
+            // Update image position to maintain the crop center
+            imageX += adjustX;
+            imageY += adjustY;
+            
+            // Apply both the scale and position changes at once
             $sourceImage.css('transform', `scale(${scale})`);
-            // Update zoom display (rounded to nearest percent)
+            $imageContainer.css({
+                left: imageX + 'px',
+                top: imageY + 'px'
+            });
+            
+            // Update zoom display
             $('#image-zoom').text(`${Math.round(scale * 100)}%`);
+            
+            // Ensure the image covers the frame
+            ensureImageCoversFrame();
+            
             updateCropInfo();
         }
     });
@@ -216,16 +261,168 @@ $(document).ready(function() {
         const minZoom = minScale * 1.05;
         
         if (scale > minZoom) {
+            // Get current dimensions and positions before zooming
+            const cropRect = $cropFrame[0].getBoundingClientRect();
+            const imageRect = $sourceImage[0].getBoundingClientRect();
+            
+            // Calculate the center of the crop frame
+            const cropCenterX = cropRect.left + cropRect.width / 2;
+            const cropCenterY = cropRect.top + cropRect.height / 2;
+            
+            // Calculate the relative position of the crop center within the image
+            // This is the point we want to keep fixed during zoom
+            const relativeX = (cropCenterX - imageRect.left) / imageRect.width;
+            const relativeY = (cropCenterY - imageRect.top) / imageRect.height;
+            
+            // Calculate the old distance from the image edge to the crop center
+            const oldDistanceX = relativeX * imageRect.width;
+            const oldDistanceY = relativeY * imageRect.height;
+            
+            // Apply the zoom
+            const oldScale = scale;
             scale *= 0.9;
             // Ensure we don't go below the minimum zoom
             scale = Math.max(scale, minZoom);
+            
+            // Calculate the new image dimensions after zoom
+            const newWidth = imageRect.width * (scale / oldScale);
+            const newHeight = imageRect.height * (scale / oldScale);
+            
+            // Calculate the new distance from the image edge to the crop center
+            const newDistanceX = relativeX * newWidth;
+            const newDistanceY = relativeY * newHeight;
+            
+            // Calculate the position adjustment needed
+            const adjustX = oldDistanceX - newDistanceX;
+            const adjustY = oldDistanceY - newDistanceY;
+            
+            // Update image position to maintain the crop center
+            imageX += adjustX;
+            imageY += adjustY;
+            
+            // Apply both the scale and position changes at once to avoid flashing
             $sourceImage.css('transform', `scale(${scale})`);
-            // Update zoom display (rounded to nearest percent)
+            $imageContainer.css({
+                left: imageX + 'px',
+                top: imageY + 'px'
+            });
+            
+            // Update zoom display
             $('#image-zoom').text(`${Math.round(scale * 100)}%`);
+            // Ensure the image covers the frame (without setTimeout)
+            ensureImageCoversFrame();
+            
             updateCropInfo();
         }
     });
     
+    // Make the image draggable with constraints
+    $imageContainer.draggable({
+        drag: function(event, ui) {
+            // Get the current dimensions
+            const cropRect = $cropFrame[0].getBoundingClientRect();
+            const imageRect = $sourceImage[0].getBoundingClientRect();
+            const containerRect = $cropContainer[0].getBoundingClientRect();
+            
+            // Calculate the offsets before the proposed move
+            const currentImageLeft = imageRect.left - containerRect.left;
+            const currentImageRight = currentImageLeft + imageRect.width;
+            const currentImageTop = imageRect.top - containerRect.top;
+            const currentImageBottom = currentImageTop + imageRect.height;
+            
+            // Calculate the crop frame position relative to the container
+            const cropLeft = cropRect.left - containerRect.left;
+            const cropRight = cropLeft + cropRect.width;
+            const cropTop = cropRect.top - containerRect.top;
+            const cropBottom = cropTop + cropRect.height;
+            
+            // Calculate the proposed movement
+            const deltaX = ui.position.left - imageX;
+            const deltaY = ui.position.top - imageY;
+            
+            // Calculate the new image position after the proposed move
+            const newImageLeft = currentImageLeft + deltaX;
+            const newImageRight = currentImageRight + deltaX;
+            const newImageTop = currentImageTop + deltaY;
+            const newImageBottom = currentImageBottom + deltaY;
+            
+            // Check if the proposed move would leave the crop frame uncovered
+            
+            // Check left edge - don't allow the image's left edge to move right of the crop's left edge
+            if (newImageLeft > cropLeft) {
+                ui.position.left = imageX + (cropLeft - currentImageLeft);
+            }
+            
+            // Check right edge - don't allow the image's right edge to move left of the crop's right edge
+            if (newImageRight < cropRight) {
+                ui.position.left = imageX + (cropRight - currentImageRight);
+            }
+            
+            // Check top edge - don't allow the image's top edge to move below the crop's top edge
+            if (newImageTop > cropTop) {
+                ui.position.top = imageY + (cropTop - currentImageTop);
+            }
+            
+            // Check bottom edge - don't allow the image's bottom edge to move above the crop's bottom edge
+            if (newImageBottom < cropBottom) {
+                ui.position.top = imageY + (cropBottom - currentImageBottom);
+            }
+            
+            // Update our tracking variables with the final position
+            imageX = ui.position.left;
+            imageY = ui.position.top;
+            
+            updateCropInfo();
+        }
+    });
+    
+    // Modify the ensureImageCoversFrame function to return the adjustments
+    function ensureImageCoversFrame() {
+        // Force a reflow to get accurate measurements
+        $sourceImage[0].offsetHeight;
+        
+        const cropRect = $cropFrame[0].getBoundingClientRect();
+        const imageRect = $sourceImage[0].getBoundingClientRect();
+        
+        // Check if the image is outside the frame on any side
+        let adjustmentNeeded = false;
+        let newImageX = imageX;
+        let newImageY = imageY;
+        
+        // Check left edge
+        if (imageRect.left > cropRect.left) {
+            newImageX = imageX - (imageRect.left - cropRect.left);
+            adjustmentNeeded = true;
+        }
+        
+        // Check right edge
+        if (imageRect.right < cropRect.right) {
+            newImageX = imageX + (cropRect.right - imageRect.right);
+            adjustmentNeeded = true;
+        }
+        
+        // Check top edge
+        if (imageRect.top > cropRect.top) {
+            newImageY = imageY - (imageRect.top - cropRect.top);
+            adjustmentNeeded = true;
+        }
+        
+        // Check bottom edge
+        if (imageRect.bottom < cropRect.bottom) {
+            newImageY = imageY + (cropRect.bottom - imageRect.bottom);
+            adjustmentNeeded = true;
+        }
+        
+        // Apply the adjustment if needed
+        if (adjustmentNeeded) {
+            imageX = newImageX;
+            imageY = newImageY;
+            $imageContainer.css({
+                left: imageX + 'px',
+                top: imageY + 'px'
+            });
+        }
+    }
     $('#moveLeft').on('click', function() {
         imageX -= 10;
         $imageContainer.css('left', imageX + 'px');
