@@ -224,7 +224,6 @@ $(document).ready(function () {
 
     // Apply scale
     $sourceImage.css("transform", `scale(${settings.scale})`);
-
     // Apply position
     $imageContainer.css({
       left: settings.imageX + "px",
@@ -238,13 +237,37 @@ $(document).ready(function () {
     $sourceImage[0].offsetHeight;
   }
   // Handle zoom and move controls
+  // Add this at the beginning of your document.ready function
+  let isShiftKeyDown = false;
+  let isCtrlKeyDown = false;
+
+  // Add event listeners for the Shift and Control keys
+  $(document).on('keydown', function(e) {
+    if (e.key === 'Shift') {
+      isShiftKeyDown = true;
+    }
+    if (e.key === 'Control' || e.key === 'Meta') { // Meta for Mac
+      isCtrlKeyDown = true;
+    }
+  });
+
+  $(document).on('keyup', function(e) {
+    if (e.key === 'Shift') {
+      isShiftKeyDown = false;
+    }
+    if (e.key === 'Control' || e.key === 'Meta') { // Meta for Mac
+      isCtrlKeyDown = false;
+    }
+  });
+
+  // Modify the zoom handlers
   $("#zoomIn").on("click", function () {
     // Get current settings
     const settings = platformSettings[currentPlatform];
     
     // First, ensure current scale is at least the minimum scale
     if (settings.scale > settings.maxScale) {
-        settings.scale = settings.maxScale;
+      settings.scale = settings.maxScale;
     }
 
     // Don't zoom in if we're already at maximum scale
@@ -268,9 +291,15 @@ $(document).ready(function () {
     const oldDistanceX = relativeX * imageRect.width;
     const oldDistanceY = relativeY * imageRect.height;
 
-    // Apply the zoom
+    // Apply the zoom with different increment based on key combinations
     const oldScale = settings.scale;
-    settings.scale *= 1.1;
+    if (isShiftKeyDown && isCtrlKeyDown) {
+      settings.scale *= 1.001; // 1/1000th increment when both Shift and Ctrl are pressed
+    } else if (isShiftKeyDown) {
+      settings.scale *= 1.01;  // 1/100th increment when only Shift is pressed
+    } else {
+      settings.scale *= 1.1;   // 1/10th increment normally
+    }
 
     // Ensure we don't exceed the maximum zoom
     settings.scale = Math.min(settings.scale, settings.maxScale);
@@ -316,7 +345,7 @@ $(document).ready(function () {
     
     // First, ensure current scale is at least the minimum scale
     if (settings.scale < settings.minScale) {
-        settings.scale = settings.minScale;
+      settings.scale = settings.minScale;
     }
     
     // Don't zoom out if we're already at minimum scale
@@ -340,9 +369,15 @@ $(document).ready(function () {
     const oldDistanceX = relativeX * imageRect.width;
     const oldDistanceY = relativeY * imageRect.height;
 
-    // Apply the zoom
+    // Apply the zoom with different increment based on key combinations
     const oldScale = settings.scale;
-    settings.scale *= 0.9;
+    if (isShiftKeyDown && isCtrlKeyDown) {
+      settings.scale *= 0.999; // 1/1000th decrement when both Shift and Ctrl are pressed
+    } else if (isShiftKeyDown) {
+      settings.scale *= 0.99;  // 1/100th decrement when only Shift is pressed
+    } else {
+      settings.scale *= 0.9;   // 1/10th decrement normally
+    }
 
     // Ensure we don't go below the minimum zoom
     settings.scale = Math.max(settings.scale, settings.minScale);
@@ -376,6 +411,67 @@ $(document).ready(function () {
     // Ensure the image covers the frame
     ensureImageCoversFrame();
 
+    updateCropInfo();
+  });
+
+  // Modify the movement handlers
+  $("#moveLeft").on("click", function () {
+    // Get current settings
+    const settings = platformSettings[currentPlatform];
+    if (isShiftKeyDown && isCtrlKeyDown) {
+      settings.imageX -= 0.1; // 1/1000th of normal movement (0.1px)
+    } else if (isShiftKeyDown) {
+      settings.imageX -= 1;   // 1/100th of normal movement (1px)
+    } else {
+      settings.imageX -= 10;  // Normal movement (10px)
+    }
+    $imageContainer.css("left", settings.imageX + "px");
+    ensureImageCoversFrame();
+    updateCropInfo();
+  });
+
+  $("#moveRight").on("click", function () {
+    // Get current settings
+    const settings = platformSettings[currentPlatform];
+    if (isShiftKeyDown && isCtrlKeyDown) {
+      settings.imageX += 0.1; // 1/1000th of normal movement (0.1px)
+    } else if (isShiftKeyDown) {
+      settings.imageX += 1;   // 1/100th of normal movement (1px)
+    } else {
+      settings.imageX += 10;  // Normal movement (10px)
+    }
+    $imageContainer.css("left", settings.imageX + "px");
+    ensureImageCoversFrame();
+    updateCropInfo();
+  });
+
+  $("#moveUp").on("click", function () {
+    // Get current settings
+    const settings = platformSettings[currentPlatform];
+    if (isShiftKeyDown && isCtrlKeyDown) {
+      settings.imageY -= 0.1; // 1/1000th of normal movement (0.1px)
+    } else if (isShiftKeyDown) {
+      settings.imageY -= 1;   // 1/100th of normal movement (1px)
+    } else {
+      settings.imageY -= 10;  // Normal movement (10px)
+    }
+    $imageContainer.css("top", settings.imageY + "px");
+    ensureImageCoversFrame();
+    updateCropInfo();
+  });
+
+  $("#moveDown").on("click", function () {
+    // Get current settings
+    const settings = platformSettings[currentPlatform];
+    if (isShiftKeyDown && isCtrlKeyDown) {
+      settings.imageY += 0.1; // 1/1000th of normal movement (0.1px)
+    } else if (isShiftKeyDown) {
+      settings.imageY += 1;   // 1/100th of normal movement (1px)
+    } else {
+      settings.imageY += 10;  // Normal movement (10px)
+    }
+    $imageContainer.css("top", settings.imageY + "px");
+    ensureImageCoversFrame();
     updateCropInfo();
   });
 
@@ -415,7 +511,6 @@ $(document).ready(function () {
       if (newImageLeft > cropLeft) {
         ui.position.left = imageX + (cropLeft - currentImageLeft);
       }
-
       // Check right edge - don't allow the image's right edge to move left of the crop's right edge
       if (newImageRight < cropRight) {
         ui.position.left = imageX + (cropRight - currentImageRight);
@@ -489,7 +584,11 @@ $(document).ready(function () {
   $("#moveLeft").on("click", function () {
     // Get current settings
     const settings = platformSettings[currentPlatform];
-    settings.imageX -= 10;
+    if (isShiftKeyDown) {
+      settings.imageX -= 1; // 1/100th of normal movement (1px)
+    } else {
+      settings.imageX -= 10; // Normal movement (10px)
+    }
     $imageContainer.css("left", settings.imageX + "px");
     ensureImageCoversFrame();
     updateCropInfo();
@@ -498,7 +597,11 @@ $(document).ready(function () {
   $("#moveRight").on("click", function () {
     // Get current settings
     const settings = platformSettings[currentPlatform];
-    settings.imageX += 10;
+    if (isShiftKeyDown) {
+      settings.imageX += 1; // 1/100th of normal movement (1px)
+    } else {
+      settings.imageX += 10; // Normal movement (10px)
+    }
     $imageContainer.css("left", settings.imageX + "px");
     ensureImageCoversFrame();
     updateCropInfo();
@@ -507,7 +610,11 @@ $(document).ready(function () {
   $("#moveUp").on("click", function () {
     // Get current settings
     const settings = platformSettings[currentPlatform];
-    settings.imageY -= 10;
+    if (isShiftKeyDown) {
+      settings.imageY -= 1; // 1/100th of normal movement (1px)
+    } else {
+      settings.imageY -= 10; // Normal movement (10px)
+    }
     $imageContainer.css("top", settings.imageY + "px");
     ensureImageCoversFrame();
     updateCropInfo();
@@ -516,7 +623,11 @@ $(document).ready(function () {
   $("#moveDown").on("click", function () {
     // Get current settings
     const settings = platformSettings[currentPlatform];
-    settings.imageY += 10;
+    if (isShiftKeyDown) {
+      settings.imageY += 1; // 1/100th of normal movement (1px)
+    } else {
+      settings.imageY += 10; // Normal movement (10px)
+    }
     $imageContainer.css("top", settings.imageY + "px");
     ensureImageCoversFrame();
     updateCropInfo();
@@ -528,13 +639,42 @@ $(document).ready(function () {
 
     // Switch to new platform
     currentPlatform = this.id.replace("-tab", "");
+    
+    // Check the corresponding checkbox and don't uncheck others
+    $("#" + currentPlatform + "-check").prop("checked", true);
 
     // Update crop frame for the new platform
     updateCropFrameForPlatform();
 
     // Apply the stored settings for the new platform
     applyPlatformSettings();
+
+    // Force a reflow to ensure all DOM updates are applied
+    $sourceImage[0].offsetHeight;
+
+    // Ensure the image covers the frame after switching
+    ensureImageCoversFrame();
+
+    // Update crop info with the new state
+    updateCropInfo();
   });
+  
+  // Also handle checkbox clicks to switch to the corresponding tab
+  $("input[type=checkbox][id$='-check']").on("change", function() {
+    const platform = this.id.replace("-check", "");
+    
+    // If checkbox is checked, switch to that tab
+    if ($(this).prop("checked")) {
+      $("#" + platform + "-tab").click();
+    }
+    // If unchecked, don't allow if it's the current tab
+    else if (platform === currentPlatform) {
+      $(this).prop("checked", true); // Keep it checked
+    }
+  });
+  
+  // Check the Bluesky checkbox by default
+  $("#bluesky-check").prop("checked", true);
 
   // Add these helper functions
   function savePlatformSettings() {
@@ -567,7 +707,7 @@ $(document).ready(function () {
     const originalHeight = this.naturalHeight;
 
     // Display the image dimensions
-    $("#image-size").text(`Size: ${originalWidth} x ${originalHeight} px`);
+    $("#image-size").text(`${originalWidth} x ${originalHeight} px`);
     // Initialize optimal settings for each platform
     Object.keys(platformDimensions).forEach((platform) => {
       // Store the original currentPlatform value
@@ -623,8 +763,8 @@ $(document).ready(function () {
         }
 
       // Update the min/max zoom displays for user reference only
-      $(`#${platform}-min-zoom`).text(`Min: ${Math.round(minScale * 100)}%`);
-      $(`#${platform}-max-zoom`).text(`Max: ${Math.round(maxScale * 100)}%`);
+      $(`#${platform}-min-zoom`).text(`${Math.round(minScale * 100)}%`);
+      $(`#${platform}-max-zoom`).text(`${Math.round(maxScale * 100)}%`);
 
       // Calculate the scaled image dimensions for this platform
       const scaledWidth = originalWidth * initialScale;

@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -14,16 +15,19 @@
             height: 500px;
             border: 1px solid #ddd;
         }
+
         .image-container {
             position: absolute;
             cursor: move;
         }
+
         .crop-frame {
             position: absolute;
             border: 2px solid red;
             z-index: 100;
             pointer-events: none;
         }
+
         .tab-content {
             padding: 20px;
             border-left: 1px solid #dee2e6;
@@ -33,15 +37,15 @@
         }
     </style>
 </head>
+
 <body>
     <div class="container-fluid mt-3">
-        <!-- Removed the title "Social Media Image Cropper" -->
         <!-- Action bar with logo, checkboxes and post button -->
         <div class="bg-light p-3 rounded mb-4 d-flex justify-content-between align-items-center">
             <div class="d-flex align-items-center">
                 <!-- Logo added before checkboxes -->
-                <img src="/NEW LOGO PNG.png" alt="Logo" height="40" class="me-3">
-                
+                <a href="/index.html"><img src="/NEW LOGO PNG.png" alt="Logo" height="40" class="me-3"></a>
+
                 <div class="form-check form-check-inline">
                     <input class="form-check-input" type="checkbox" id="bluesky-check">
                     <label class="form-check-label" for="bluesky-check">Bluesky</label>
@@ -67,27 +71,33 @@
                 <button id="post-button" class="btn btn-primary">Post</button>
             </div>
         </div>
-        
+
         <div class="row">
             <!-- Left Panel - Image Cropping -->
             <div class="col-md-7">
                 <div class="card">
                     <div class="card-header">
-    <div class="d-flex justify-content-between align-items-center">
-        <div>
-            <h5 class="mb-0 d-inline">Image Controls</h5>
-            <span class="ms-3 text-muted" id="image-size">Size: -- x -- px</span>
-        </div>
-        <div>
-            <button id="zoomIn" class="btn btn-sm btn-outline-primary mx-1"><i class="bi bi-zoom-in"></i></button>
-            <button id="zoomOut" class="btn btn-sm btn-outline-primary mx-1"><i class="bi bi-zoom-out"></i></button>
-            <button id="moveLeft" class="btn btn-sm btn-outline-primary mx-1"><i class="bi bi-arrow-left"></i></button>
-            <button id="moveRight" class="btn btn-sm btn-outline-primary mx-1"><i class="bi bi-arrow-right"></i></button>
-            <button id="moveUp" class="btn btn-sm btn-outline-primary mx-1"><i class="bi bi-arrow-up"></i></button>
-            <button id="moveDown" class="btn btn-sm btn-outline-primary mx-1"><i class="bi bi-arrow-down"></i></button>
-        </div>
-    </div>
-</div>                    <div class="card-body p-0">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div><strong>Image Size</strong>
+                                <span class="ms-3 text-muted" id="image-size">Size: -- x -- px</span>
+                            </div>
+                            <div>
+                                <button id="zoomIn" class="btn btn-sm btn-outline-primary mx-1"><i
+                                        class="bi bi-zoom-in"></i></button>
+                                <button id="zoomOut" class="btn btn-sm btn-outline-primary mx-1"><i
+                                        class="bi bi-zoom-out"></i></button>
+                                <button id="moveLeft" class="btn btn-sm btn-outline-primary mx-1"><i
+                                        class="bi bi-arrow-left"></i></button>
+                                <button id="moveRight" class="btn btn-sm btn-outline-primary mx-1"><i
+                                        class="bi bi-arrow-right"></i></button>
+                                <button id="moveUp" class="btn btn-sm btn-outline-primary mx-1"><i
+                                        class="bi bi-arrow-up"></i></button>
+                                <button id="moveDown" class="btn btn-sm btn-outline-primary mx-1"><i
+                                        class="bi bi-arrow-down"></i></button>
+                            </div>
+                        </div>
+                        <div class="text-end"><small>Hold down [SHIFT] for fine and [CTRL][SHIFT] or [META][SHIFT] for ultra-fine adjustments</small></div>
+                    </div>                    <div class="card-body p-0">
                         <div class="crop-container" id="cropContainer">
                             <div class="image-container" id="imageContainer">
                                 <img id="sourceImage" src="" alt="Source Image">
@@ -97,37 +107,50 @@
                     </div>
                 </div>
             </div>
-            
+
             <!-- Right Panel - Social Media Tabs -->
             <div class="col-md-5">
                 <div class="card">
                     <div class="card-header">
                         <ul class="nav nav-tabs card-header-tabs" id="socialMediaTabs" role="tablist">
                             <li class="nav-item" role="presentation">
-                                <button class="nav-link active" id="bluesky-tab" data-bs-toggle="tab" data-bs-target="#bluesky" type="button" role="tab" aria-controls="bluesky" aria-selected="true">Bluesky</button>
+                                <button class="nav-link active" id="bluesky-tab" data-bs-toggle="tab"
+                                    data-bs-target="#bluesky" type="button" role="tab" aria-controls="bluesky"
+                                    aria-selected="true">Bluesky</button>
                             </li>
                             <li class="nav-item" role="presentation">
-                                <button class="nav-link" id="instagram-tab" data-bs-toggle="tab" data-bs-target="#instagram" type="button" role="tab" aria-controls="instagram" aria-selected="false">Instagram</button>
+                                <button class="nav-link" id="instagram-tab" data-bs-toggle="tab"
+                                    data-bs-target="#instagram" type="button" role="tab" aria-controls="instagram"
+                                    aria-selected="false">Instagram</button>
                             </li>
                             <li class="nav-item" role="presentation">
-                                <button class="nav-link" id="facebook-tab" data-bs-toggle="tab" data-bs-target="#facebook" type="button" role="tab" aria-controls="facebook" aria-selected="false">Facebook</button>
+                                <button class="nav-link" id="facebook-tab" data-bs-toggle="tab"
+                                    data-bs-target="#facebook" type="button" role="tab" aria-controls="facebook"
+                                    aria-selected="false">Facebook</button>
                             </li>
                             <li class="nav-item" role="presentation">
-                                <button class="nav-link" id="threads-tab" data-bs-toggle="tab" data-bs-target="#threads" type="button" role="tab" aria-controls="threads" aria-selected="false">Threads</button>
+                                <button class="nav-link" id="threads-tab" data-bs-toggle="tab" data-bs-target="#threads"
+                                    type="button" role="tab" aria-controls="threads"
+                                    aria-selected="false">Threads</button>
                             </li>
                             <li class="nav-item" role="presentation">
-                                <button class="nav-link" id="twitter-tab" data-bs-toggle="tab" data-bs-target="#twitter" type="button" role="tab" aria-controls="twitter" aria-selected="false">Twitter</button>
+                                <button class="nav-link" id="twitter-tab" data-bs-toggle="tab" data-bs-target="#twitter"
+                                    type="button" role="tab" aria-controls="twitter"
+                                    aria-selected="false">Twitter</button>
                             </li>
                         </ul>
                     </div>
                     <div class="card-body">
                         <div class="tab-content" id="socialMediaTabContent">
-                            <div class="tab-pane fade show active" id="bluesky" role="tabpanel" aria-labelledby="bluesky-tab">
+                            <div class="tab-pane fade show active" id="bluesky" role="tabpanel"
+                                aria-labelledby="bluesky-tab">
                                 <h5>Bluesky Image Dimensions</h5>
                                 <p><small class="text-muted">Recommended: 1200 x 675 pixels (16:9 ratio)</small></p>
                                 <hr>
                                 <div class="crop-info">
-                                    <p><strong>Zoom:</strong> <span id="bluesky-min-zoom">Min: --</span> &lt; <span id="bluesky-zoom">100%</span> &lt; <span id="bluesky-max-zoom">Max: --</span></p>
+                                    <p><strong>Zoom:</strong> <span id="bluesky-min-zoom">Min: --</span> &lt;
+                                        <strong><span id="bluesky-zoom">100%</span></strong> &lt; <span
+                                            id="bluesky-max-zoom">Max: --</span></p>
                                     <p><strong>Crop Position:</strong> <span id="bluesky-position">X: 0, Y: 0</span></p>
                                     <p><strong>ImageMagick Command:</strong></p>
                                     <pre id="bluesky-command" class="bg-light p-2 rounded small"></pre>
@@ -138,8 +161,11 @@
                                 <p><small class="text-muted">Recommended: 1080 x 1080 pixels (1:1 square)</small></p>
                                 <hr>
                                 <div class="crop-info">
-                                    <p><strong>Zoom:</strong> <span id="instagram-min-zoom">Min: --</span> &lt; <span id="instagram-zoom">100%</span> &lt; <span id="instagram-max-zoom">Max: --</span></p>
-                                    <p><strong>Crop Position:</strong> <span id="instagram-position">X: 0, Y: 0</span></p>
+                                    <p><strong>Zoom:</strong> <span id="instagram-min-zoom">Min: --</span> &lt;
+                                        <strong><span id="instagram-zoom">100%</span></strong> &lt; <span
+                                            id="instagram-max-zoom">Max: --</span></p>
+                                    <p><strong>Crop Position:</strong> <span id="instagram-position">X: 0, Y: 0</span>
+                                    </p>
                                     <p><strong>ImageMagick Command:</strong></p>
                                     <pre id="instagram-command" class="bg-light p-2 rounded small"></pre>
                                 </div>
@@ -149,8 +175,11 @@
                                 <p><small class="text-muted">Recommended: 1200 x 630 pixels (1.91:1 ratio)</small></p>
                                 <hr>
                                 <div class="crop-info">
-                                    <p><strong>Zoom:</strong> <span id="facebook-min-zoom">Min: --</span> &lt; <span id="facebook-zoom">100%</span> &lt; <span id="facebook-max-zoom">Max: --</span></p>
-                                    <p><strong>Crop Position:</strong> <span id="facebook-position">X: 0, Y: 0</span></p>
+                                    <p><strong>Zoom:</strong> <span id="facebook-min-zoom">Min: --</span> &lt;
+                                        <strong><span id="facebook-zoom">100%</span><strong> &lt; <span
+                                                    id="facebook-max-zoom">Max: --</span></p>
+                                    <p><strong>Crop Position:</strong> <span id="facebook-position">X: 0, Y: 0</span>
+                                    </p>
                                     <p><strong>ImageMagick Command:</strong></p>
                                     <pre id="facebook-command" class="bg-light p-2 rounded small"></pre>
                                 </div>
@@ -160,7 +189,9 @@
                                 <p><small class="text-muted">Recommended: 1080 x 1350 pixels (4:5 ratio)</small></p>
                                 <hr>
                                 <div class="crop-info">
-                                    <p><strong>Zoom:</strong> <span id="threads-min-zoom">Min: --</span> &lt; <span id="threads-zoom">100%</span> &lt; <span id="threads-max-zoom">Max: --</span></p>
+                                    <p><strong>Zoom:</strong> <span id="threads-min-zoom">Min: --</span> &lt;
+                                        <strong><span id="threads-zoom">100%</span></strong> &lt; <span
+                                            id="threads-max-zoom">Max: --</span></p>
                                     <p><strong>Crop Position:</strong> <span id="threads-position">X: 0, Y: 0</span></p>
                                     <p><strong>ImageMagick Command:</strong></p>
                                     <pre id="threads-command" class="bg-light p-2 rounded small"></pre>
@@ -171,7 +202,9 @@
                                 <p><small class="text-muted">Recommended: 1200 x 675 pixels (16:9 ratio)</small></p>
                                 <hr>
                                 <div class="crop-info">
-                                    <p><strong>Zoom:</strong> <span id="twitter-min-zoom">Min: --</span> &lt; <span id="twitter-zoom">100%</span> &lt; <span id="twitter-max-zoom">Max: --</span></p>
+                                    <p><strong>Zoom:</strong> <span id="twitter-min-zoom">Min: --</span> &lt;
+                                        <strong><span id="twitter-zoom">100%</span></strong> &lt; <span
+                                            id="twitter-max-zoom">Max: --</span></p>
                                     <p><strong>Crop Position:</strong> <span id="twitter-position">X: 0, Y: 0</span></p>
                                     <p><strong>ImageMagick Command:</strong></p>
                                     <pre id="twitter-command" class="bg-light p-3 rounded small text-wrap"></pre>
@@ -189,4 +222,5 @@
     <script src="https://code.jquery.com/ui/1.13.2/jquery-ui.min.js"></script>
     <script src="crop.js"></script>
 </body>
+
 </html>
