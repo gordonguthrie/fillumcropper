@@ -460,15 +460,48 @@ $(document).ready(function() {
         const originalHeight = this.naturalHeight;
         $('#image-size').text(`${originalWidth} × ${originalHeight}px`);
         
-        // Center the image initially
+        // Initialize the crop frame first
+        initCropFrame();
+        
+        // Calculate the minimum zoom required to cover the crop frame
+        const cropFrameWidth = parseFloat($cropFrame.css('width'));
+        const cropFrameHeight = parseFloat($cropFrame.css('height'));
+        
+        // Calculate the minimum scale needed to ensure the image is at least as large as the crop frame
+        const minScaleWidth = cropFrameWidth / originalWidth;
+        const minScaleHeight = cropFrameHeight / originalHeight;
+        const minScale = Math.max(minScaleWidth, minScaleHeight);
+        
+        // Add a small buffer to ensure the image is slightly larger than the frame
+        scale = minScale * 1.05;
+        
+        // Apply the initial scale
+        $sourceImage.css('transform', `scale(${scale})`);
+        
+        // Update zoom display (rounded to nearest percent)
+        $('#image-zoom').text(`${Math.round(scale * 100)}%`);
+        
+        // Center the image
         const containerWidth = $cropContainer.width();
         const containerHeight = $cropContainer.height();
         
+        // Calculate the scaled image dimensions
+        const scaledWidth = originalWidth * scale;
+        const scaledHeight = originalHeight * scale;
+        
+        // Center the image in the container
+        imageX = (containerWidth - scaledWidth) / 2;
+        imageY = (containerHeight - scaledHeight) / 2;
+        
         $imageContainer.css({
-            left: (containerWidth - $sourceImage.width()) / 2 + 'px',
-            top: (containerHeight - $sourceImage.height()) / 2 + 'px'
+            left: imageX + 'px',
+            top: imageY + 'px'
         });
         
-        initCropFrame();
+        // Ensure the image covers the frame
+        ensureImageCoversFrame();
+        
+        // Update crop info
+        updateCropInfo();
     });
 });
