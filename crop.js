@@ -21,12 +21,6 @@ $(document).ready(function() {
     const $sourceImage = $('#sourceImage');
     $sourceImage.attr('src', '/uploads/' + imageName);
 
-    // Update the filename display
-    $('#image-filename').text(imageName);
-    
-    // Update zoom display (initial value)
-    $('#image-zoom').text('100%');
-
     // Variables for image manipulation
     let scale = 1;
     let imageX = 0;
@@ -34,7 +28,15 @@ $(document).ready(function() {
     let cropX = 0;
     let cropY = 0;
     let currentPlatform = 'bluesky'; // Default platform
-    
+
+    // Platform-specific settings storage
+    const platformSettings = {
+        'bluesky': { scale: 1, imageX: 0, imageY: 0 },
+        'instagram': { scale: 1, imageX: 0, imageY: 0 },
+        'facebook': { scale: 1, imageX: 0, imageY: 0 },
+        'threads': { scale: 1, imageX: 0, imageY: 0 },
+        'twitter': { scale: 1, imageX: 0, imageY: 0 }
+    };    
     const $cropContainer = $('#cropContainer');
     const $imageContainer = $('#imageContainer');
     const $cropFrame = $('#cropFrame');
@@ -132,34 +134,44 @@ $(document).ready(function() {
         // Calculate the actual crop coordinates relative to the original image
         const imageRect = $sourceImage[0].getBoundingClientRect();
         const cropRect = $cropFrame[0].getBoundingClientRect();
+        const containerRect = $cropContainer[0].getBoundingClientRect();
         
-        // Calculate the crop coordinates in the original image scale
+        // Get the current settings for the platform
+        const settings = platformSettings[currentPlatform];
+        
+        // Get the original image dimensions
         const originalImageWidth = $sourceImage[0].naturalWidth;
         const originalImageHeight = $sourceImage[0].naturalHeight;
-        const displayedImageWidth = imageRect.width;
-        const displayedImageHeight = imageRect.height;
         
-        // Calculate the scale between original and displayed image
-        const widthRatio = originalImageWidth / displayedImageWidth;
-        const heightRatio = originalImageHeight / displayedImageHeight;
+        // Calculate the displayed image dimensions (accounting for scale)
+        const displayedImageWidth = originalImageWidth * settings.scale;
+        const displayedImageHeight = originalImageHeight * settings.scale;
+        
+        // Calculate the position of the image relative to the container
+        const imageLeft = imageRect.left - containerRect.left;
+        const imageTop = imageRect.top - containerRect.top;
+        
+        // Calculate the position of the crop frame relative to the container
+        const cropLeft = cropRect.left - containerRect.left;
+        const cropTop = cropRect.top - containerRect.top;
         
         // Calculate the crop position relative to the image
-        const cropContainerRect = $cropContainer[0].getBoundingClientRect();
-        const relativeX = cropRect.left - imageRect.left;
-        const relativeY = cropRect.top - imageRect.top;
+        const relativeX = cropLeft - imageLeft;
+        const relativeY = cropTop - imageTop;
         
         // Calculate the crop position in the original image coordinates
-        const originalX = Math.max(0, Math.round(relativeX * widthRatio));
-        const originalY = Math.max(0, Math.round(relativeY * heightRatio));
+        // We need to account for the scale factor
+        const originalX = Math.max(0, Math.round(relativeX / settings.scale));
+        const originalY = Math.max(0, Math.round(relativeY / settings.scale));
         
         // Calculate the crop width and height in the original image coordinates
         const originalWidth = Math.min(
             originalImageWidth - originalX,
-            Math.round(cropRect.width * widthRatio)
+            Math.round(cropRect.width / settings.scale)
         );
         const originalHeight = Math.min(
             originalImageHeight - originalY,
-            Math.round(cropRect.height * heightRatio)
+            Math.round(cropRect.height / settings.scale)
         );
         
         // Update position display
@@ -177,9 +189,55 @@ $(document).ready(function() {
         
         $(`#${currentPlatform}-command`).text(command);
     }
-    
+
+    // Modify the tab change handler to properly update everything
+    $('.nav-link').on('click', function() {
+        // Save current platform settings before switching
+        savePlatformSettings();
+        
+        // Switch to new platform
+        currentPlatform = this.id.replace('-tab', '');
+        
+        // Update crop frame for the new platform
+        updateCropFrameForPlatform();
+        
+        // Apply the stored settings for the new platform
+        applyPlatformSettings();
+        
+        // Force a reflow to ensure all DOM updates are applied
+        $sourceImage[0].offsetHeight;
+        
+        // Ensure the image covers the frame after switching
+        ensureImageCoversFrame();
+        
+        // Update crop info with the new state
+        updateCropInfo();
+    });
+
+    // Modify the applyPlatformSettings function to ensure proper updates
+    function applyPlatformSettings() {
+        const settings = platformSettings[currentPlatform];
+        
+        // Apply scale
+        $sourceImage.css('transform', `scale(${settings.scale})`);
+        
+        // Apply position
+        $imageContainer.css({
+            left: settings.imageX + 'px',
+            top: settings.imageY + 'px'
+        });
+        
+        // Update zoom display in the current tab
+        $(`#${currentPlatform}-zoom`).text(`${Math.round(settings.scale * 100)}%`);
+        
+        // Force a reflow to ensure all DOM updates are applied
+        $sourceImage[0].offsetHeight;
+    }    
     // Handle zoom and move controls
     $('#zoomIn').on('click', function() {
+        // Get current settings
+        const settings = platformSettings[currentPlatform];
+        
         // Calculate maximum zoom based on the crop frame dimensions and image resolution
         const cropFrameWidth = parseFloat($cropFrame.css('width'));
         const cropFrameHeight = parseFloat($cropFrame.css('height'));
@@ -195,7 +253,7 @@ $(document).ready(function() {
         // Maximum zoom is when the crop frame area contains exactly the number of pixels needed for the target
         const maxScale = Math.max(widthRatio, heightRatio);
         
-        if (scale < maxScale) {
+        if (settings.scale < maxScale) {
             // Get current dimensions and positions before zooming
             const cropRect = $cropFrame[0].getBoundingClientRect();
             const imageRect = $sourceImage[0].getBoundingClientRect();
@@ -213,14 +271,14 @@ $(document).ready(function() {
             const oldDistanceY = relativeY * imageRect.height;
             
             // Apply the zoom
-            const oldScale = scale;
-            scale *= 1.1;
+            const oldScale = settings.scale;
+            settings.scale *= 1.1;
             // Ensure we don't exceed the maximum zoom
-            scale = Math.min(scale, maxScale);
+            settings.scale = Math.min(settings.scale, maxScale);
             
             // Calculate the new image dimensions after zoom
-            const newWidth = imageRect.width * (scale / oldScale);
-            const newHeight = imageRect.height * (scale / oldScale);
+            const newWidth = imageRect.width * (settings.scale / oldScale);
+            const newHeight = imageRect.height * (settings.scale / oldScale);
             
             // Calculate the new distance from the image edge to the crop center
             const newDistanceX = relativeX * newWidth;
@@ -231,18 +289,18 @@ $(document).ready(function() {
             const adjustY = oldDistanceY - newDistanceY;
             
             // Update image position to maintain the crop center
-            imageX += adjustX;
-            imageY += adjustY;
+            settings.imageX += adjustX;
+            settings.imageY += adjustY;
             
             // Apply both the scale and position changes at once
-            $sourceImage.css('transform', `scale(${scale})`);
+            $sourceImage.css('transform', `scale(${settings.scale})`);
             $imageContainer.css({
-                left: imageX + 'px',
-                top: imageY + 'px'
+                left: settings.imageX + 'px',
+                top: settings.imageY + 'px'
             });
             
             // Update zoom display
-            $('#image-zoom').text(`${Math.round(scale * 100)}%`);
+            $(`#${currentPlatform}-zoom`).text(`${Math.round(settings.scale * 100)}%`);
             
             // Ensure the image covers the frame
             ensureImageCoversFrame();
@@ -252,6 +310,9 @@ $(document).ready(function() {
     });
     
     $('#zoomOut').on('click', function() {
+        // Get current settings
+        const settings = platformSettings[currentPlatform];
+
         // Calculate minimum zoom required to fit the crop frame
         const cropFrameWidth = parseFloat($cropFrame.css('width'));
         const cropFrameHeight = parseFloat($cropFrame.css('height'));
@@ -264,7 +325,7 @@ $(document).ready(function() {
         // Add a small buffer to ensure the image is slightly larger than the frame
         const minZoom = minScale * 1.05;
         
-        if (scale > minZoom) {
+        if (settings.scale > minZoom) {
             // Get current dimensions and positions before zooming
             const cropRect = $cropFrame[0].getBoundingClientRect();
             const imageRect = $sourceImage[0].getBoundingClientRect();
@@ -283,14 +344,14 @@ $(document).ready(function() {
             const oldDistanceY = relativeY * imageRect.height;
             
             // Apply the zoom
-            const oldScale = scale;
-            scale *= 0.9;
+            const oldScale = settings.scale;
+            settings.scale *= 0.9;
             // Ensure we don't go below the minimum zoom
-            scale = Math.max(scale, minZoom);
+            settings.scale = Math.max(scale, minZoom);
             
             // Calculate the new image dimensions after zoom
-            const newWidth = imageRect.width * (scale / oldScale);
-            const newHeight = imageRect.height * (scale / oldScale);
+            const newWidth = imageRect.width * (settings.scale / oldScale);
+            const newHeight = imageRect.height * (settings.scale / oldScale);
             
             // Calculate the new distance from the image edge to the crop center
             const newDistanceX = relativeX * newWidth;
@@ -301,18 +362,18 @@ $(document).ready(function() {
             const adjustY = oldDistanceY - newDistanceY;
             
             // Update image position to maintain the crop center
-            imageX += adjustX;
-            imageY += adjustY;
+            settings.imageX += adjustX;
+            settings.imageY += adjustY;
             
             // Apply both the scale and position changes at once to avoid flashing
-            $sourceImage.css('transform', `scale(${scale})`);
+            $sourceImage.css('transform', `scale(${settings.scale})`);
             $imageContainer.css({
-                left: imageX + 'px',
-                top: imageY + 'px'
+                left: settings.imageX + 'px',
+                top: settings.imageY + 'px'
             });
             
             // Update zoom display
-            $('#image-zoom').text(`${Math.round(scale * 100)}%`);
+            $('#image-zoom').text(`${Math.round(settings.scale * 100)}%`);
             // Ensure the image covers the frame (without setTimeout)
             ensureImageCoversFrame();
             
@@ -380,132 +441,194 @@ $(document).ready(function() {
         }
     });
     
-    // Modify the ensureImageCoversFrame function to return the adjustments
     function ensureImageCoversFrame() {
         // Force a reflow to get accurate measurements
         $sourceImage[0].offsetHeight;
         
         const cropRect = $cropFrame[0].getBoundingClientRect();
         const imageRect = $sourceImage[0].getBoundingClientRect();
+        const settings = platformSettings[currentPlatform];
         
         // Check if the image is outside the frame on any side
         let adjustmentNeeded = false;
-        let newImageX = imageX;
-        let newImageY = imageY;
+        let newImageX = settings.imageX;
+        let newImageY = settings.imageY;
         
         // Check left edge
         if (imageRect.left > cropRect.left) {
-            newImageX = imageX - (imageRect.left - cropRect.left);
+            newImageX = settings.imageX - (imageRect.left - cropRect.left);
             adjustmentNeeded = true;
         }
         
         // Check right edge
         if (imageRect.right < cropRect.right) {
-            newImageX = imageX + (cropRect.right - imageRect.right);
+            newImageX = settings.imageX + (cropRect.right - imageRect.right);
             adjustmentNeeded = true;
         }
         
         // Check top edge
         if (imageRect.top > cropRect.top) {
-            newImageY = imageY - (imageRect.top - cropRect.top);
+            newImageY = settings.imageY - (imageRect.top - cropRect.top);
             adjustmentNeeded = true;
         }
         
         // Check bottom edge
         if (imageRect.bottom < cropRect.bottom) {
-            newImageY = imageY + (cropRect.bottom - imageRect.bottom);
+            newImageY = settings.imageY + (cropRect.bottom - imageRect.bottom);
             adjustmentNeeded = true;
         }
         
         // Apply the adjustment if needed
         if (adjustmentNeeded) {
-            imageX = newImageX;
-            imageY = newImageY;
+            settings.imageX = newImageX;
+            settings.imageY = newImageY;
             $imageContainer.css({
-                left: imageX + 'px',
-                top: imageY + 'px'
+                left: settings.imageX + 'px',
+                top: settings.imageY + 'px'
             });
         }
     }
     $('#moveLeft').on('click', function() {
-        imageX -= 10;
-        $imageContainer.css('left', imageX + 'px');
+        // Get current settings
+        const settings = platformSettings[currentPlatform];
+        settings.imageX -= 10;
+        $imageContainer.css('left', settings.imageX + 'px');
         updateCropInfo();
     });
     
     $('#moveRight').on('click', function() {
-        imageX += 10;
-        $imageContainer.css('left', imageX + 'px');
+        // Get current settings
+        const settings = platformSettings[currentPlatform];
+        settings.imageX += 10;
+        $imageContainer.css('left', settings.imageX + 'px');
         updateCropInfo();
     });
     
     $('#moveUp').on('click', function() {
-        imageY -= 10;
-        $imageContainer.css('top', imageY + 'px');
+        // Get current settings
+        const settings = platformSettings[currentPlatform];
+        settings.imageY -= 10;
+        $imageContainer.css('top', settings.imageY + 'px');
         updateCropInfo();
     });
     
     $('#moveDown').on('click', function() {
-        imageY += 10;
-        $imageContainer.css('top', imageY + 'px');
+        // Get current settings
+        const settings = platformSettings[currentPlatform];
+        settings.imageY += 10;
+        $imageContainer.css('top', settings.imageY + 'px');
         updateCropInfo();
     });
     
     // Handle tab changes
     $('.nav-link').on('click', function() {
+        // Save current platform settings before switching
+        savePlatformSettings();
+        
+        // Switch to new platform
         currentPlatform = this.id.replace('-tab', '');
+        
+        // Update crop frame for the new platform
         updateCropFrameForPlatform();
+        
+        // Apply the stored settings for the new platform
+        applyPlatformSettings();
     });
+
+    // Add these helper functions
+    function savePlatformSettings() {
+        platformSettings[currentPlatform] = {
+            scale: platformSettings[currentPlatform].scale,
+            imageX: parseFloat($imageContainer.css('left')),
+            imageY: parseFloat($imageContainer.css('top'))
+        };
+    }
+
+    function applyPlatformSettings() {
+        const settings = platformSettings[currentPlatform];
+
+        // Apply scale
+        $sourceImage.css('transform', `scale(${settings.scale})`);
+        
+        // Apply position
+        $imageContainer.css({
+            left: settings.imageX + 'px',
+            top: settings.imageY + 'px'
+        });
+        
+        // Update zoom display in the current tab
+        $(`#${currentPlatform}-zoom`).text(`${Math.round(settings.scale * 100)}%`);
+    }
     
     // Initialize when the image is loaded
     $sourceImage.on('load', function() {
         // Update the image size display
         const originalWidth = this.naturalWidth;
         const originalHeight = this.naturalHeight;
-        $('#image-size').text(`${originalWidth} × ${originalHeight}px`);
         
-        // Initialize the crop frame first
-        initCropFrame();
-        
-        // Calculate the minimum zoom required to cover the crop frame
-        const cropFrameWidth = parseFloat($cropFrame.css('width'));
-        const cropFrameHeight = parseFloat($cropFrame.css('height'));
-        
-        // Calculate the minimum scale needed to ensure the image is at least as large as the crop frame
-        const minScaleWidth = cropFrameWidth / originalWidth;
-        const minScaleHeight = cropFrameHeight / originalHeight;
-        const minScale = Math.max(minScaleWidth, minScaleHeight);
-        
-        // Add a small buffer to ensure the image is slightly larger than the frame
-        scale = minScale * 1.05;
-        
-        // Apply the initial scale
-        $sourceImage.css('transform', `scale(${scale})`);
-        
-        // Update zoom display (rounded to nearest percent)
-        $('#image-zoom').text(`${Math.round(scale * 100)}%`);
-        
-        // Center the image
-        const containerWidth = $cropContainer.width();
-        const containerHeight = $cropContainer.height();
-        
-        // Calculate the scaled image dimensions
-        const scaledWidth = originalWidth * scale;
-        const scaledHeight = originalHeight * scale;
-        
-        // Center the image in the container
-        imageX = (containerWidth - scaledWidth) / 2;
-        imageY = (containerHeight - scaledHeight) / 2;
-        
-        $imageContainer.css({
-            left: imageX + 'px',
-            top: imageY + 'px'
+        // Initialize optimal settings for each platform
+        Object.keys(platformDimensions).forEach(platform => {
+            // Initialize the crop frame for this platform
+            currentPlatform = platform;
+            initCropFrame();
+            
+            // Calculate the minimum zoom required to cover the crop frame
+            const cropFrameWidth = parseFloat($cropFrame.css('width'));
+            const cropFrameHeight = parseFloat($cropFrame.css('height'));
+            
+            // Calculate the minimum scale needed to ensure the image is at least as large as the crop frame
+            const minScaleWidth = cropFrameWidth / originalWidth;
+            const minScaleHeight = cropFrameHeight / originalHeight;
+            const minScale = Math.max(minScaleWidth, minScaleHeight);
+            
+            // Add a small buffer to ensure the image is slightly larger than the frame
+            const initialScale = minScale * 1.05;
+            
+            // Calculate the scaled image dimensions
+            const scaledWidth = originalWidth * initialScale;
+            const scaledHeight = originalHeight * initialScale;
+            
+            // Center the image in the container
+            const containerWidth = $cropContainer.width();
+            const containerHeight = $cropContainer.height();
+            const initialX = (containerWidth - scaledWidth) / 2;
+            const initialY = (containerHeight - scaledHeight) / 2;
+            
+            // Store the initial settings for this platform
+            platformSettings[platform] = {
+                scale: initialScale,
+                imageX: initialX,
+                imageY: initialY
+            };
+            
+            // Update the zoom display for this platform
+            $(`#${platform}-zoom`).text(`${Math.round(initialScale * 100)}%`);
         });
+        
+        // Reset to the default platform
+        currentPlatform = 'bluesky';
+        
+        // Apply the settings for the current platform
+        updateCropFrameForPlatform();
+        applyPlatformSettings();
+        
+        // Force a reflow to ensure all DOM updates are applied
+        $sourceImage[0].offsetHeight;
         
         // Ensure the image covers the frame
         ensureImageCoversFrame();
         
-        // Update crop info
+        // Update crop info with the initial state
         updateCropInfo();
+        
+        // Make sure the image is visible in the initial tab
+        $sourceImage.css('visibility', 'visible');
+        
+        // Add a small delay to ensure everything is rendered properly
+        setTimeout(function() {
+            // Force another update to ensure everything is in sync
+            ensureImageCoversFrame();
+            updateCropInfo();
+        }, 100);
     });
 });
