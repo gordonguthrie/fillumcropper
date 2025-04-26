@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Image Cropper for Social Media</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.3/font/bootstrap-icons.css">
+    <style>
+        .crop-container {
+            position: relative;
+            overflow: hidden;
+            width: 100%;
+            height: 500px;
+            border: 1px solid #ddd;
+        }
+        .image-container {
+            position: absolute;
+            cursor: move;
+        }
+        .crop-frame {
+            position: absolute;
+            border: 2px solid red;
+            cursor: move;
+            z-index: 100;
+        }
+        .control-btn {
+            margin: 5px;
+        }
+        .tab-content {
+            padding: 20px;
+            border-left: 1px solid #dee2e6;
+            border-right: 1px solid #dee2e6;
+            border-bottom: 1px solid #dee2e6;
+            border-radius: 0 0 5px 5px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container-fluid mt-3">
+        <h1 class="text-center mb-4">Social Media Image Cropper</h1>
+        
+        <div class="row">
+            <!-- Left Panel - Image Cropping -->
+            <div class="col-md-7">
+                <div class="card">
+                    <div class="card-header">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <h5>Image Cropping</h5>
+                            <div>
+                                <button id="zoomIn" class="btn btn-sm btn-outline-primary control-btn"><i class="bi bi-zoom-in"></i></button>
+                                <button id="zoomOut" class="btn btn-sm btn-outline-primary control-btn"><i class="bi bi-zoom-out"></i></button>
+                                <button id="moveLeft" class="btn btn-sm btn-outline-primary control-btn"><i class="bi bi-arrow-left"></i></button>
+                                <button id="moveRight" class="btn btn-sm btn-outline-primary control-btn"><i class="bi bi-arrow-right"></i></button>
+                                <button id="moveUp" class="btn btn-sm btn-outline-primary control-btn"><i class="bi bi-arrow-up"></i></button>
+                                <button id="moveDown" class="btn btn-sm btn-outline-primary control-btn"><i class="bi bi-arrow-down"></i></button>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="card-body bg-light p-2">
+                        <div class="row">
+                            <div class="col-md-4">
+                                <strong>File:</strong> <span id="image-filename">Loading...</span>
+                            </div>
+                            <div class="col-md-4">
+                                <strong>Size:</strong> <span id="image-size">Loading...</span>
+                            </div>
+                            <div class="col-md-4">
+                                <strong>Zoom:</strong> <span id="image-zoom">100%</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="card-body p-0">
+                        <div class="crop-container" id="cropContainer">
+                            <div class="image-container" id="imageContainer">
+                                <img id="sourceImage" src="" alt="Source Image">
+                            </div>
+                            <div class="crop-frame" id="cropFrame"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Right Panel - Social Media Tabs -->
+            <div class="col-md-5">
+                <div class="card">
+                    <div class="card-header">
+                        <ul class="nav nav-tabs card-header-tabs" id="socialMediaTabs" role="tablist">
+                            <li class="nav-item" role="presentation">
+                                <button class="nav-link active" id="bluesky-tab" data-bs-toggle="tab" data-bs-target="#bluesky" type="button" role="tab" aria-controls="bluesky" aria-selected="true">Bluesky</button>
+                            </li>
+                            <li class="nav-item" role="presentation">
+                                <button class="nav-link" id="instagram-tab" data-bs-toggle="tab" data-bs-target="#instagram" type="button" role="tab" aria-controls="instagram" aria-selected="false">Instagram</button>
+                            </li>
+                            <li class="nav-item" role="presentation">
+                                <button class="nav-link" id="facebook-tab" data-bs-toggle="tab" data-bs-target="#facebook" type="button" role="tab" aria-controls="facebook" aria-selected="false">Facebook</button>
+                            </li>
+                            <li class="nav-item" role="presentation">
+                                <button class="nav-link" id="threads-tab" data-bs-toggle="tab" data-bs-target="#threads" type="button" role="tab" aria-controls="threads" aria-selected="false">Threads</button>
+                            </li>
+                            <li class="nav-item" role="presentation">
+                                <button class="nav-link" id="twitter-tab" data-bs-toggle="tab" data-bs-target="#twitter" type="button" role="tab" aria-controls="twitter" aria-selected="false">Twitter</button>
+                            </li>
+                        </ul>
+                    </div>
+                    <div class="card-body">
+                        <div class="tab-content" id="socialMediaTabContent">
+                            <div class="tab-pane fade show active" id="bluesky" role="tabpanel" aria-labelledby="bluesky-tab">
+                                <h5>Bluesky Image Dimensions</h5>
+                                <p>Recommended: 1200 x 675 pixels (16:9 ratio)</p>
+                                <hr>
+                                <div class="crop-info">
+                                    <p><strong>Crop Position:</strong> <span id="bluesky-position">X: 0, Y: 0</span></p>
+                                    <p><strong>ImageMagick Command:</strong></p>
+                                    <pre id="bluesky-command" class="bg-light p-2"></pre>
+                                </div>
+                            </div>
+                            <div class="tab-pane fade" id="instagram" role="tabpanel" aria-labelledby="instagram-tab">
+                                <h5>Instagram Image Dimensions</h5>
+                                <p>Recommended: 1080 x 1080 pixels (1:1 square)</p>
+                                <hr>
+                                <div class="crop-info">
+                                    <p><strong>Crop Position:</strong> <span id="instagram-position">X: 0, Y: 0</span></p>
+                                    <p><strong>ImageMagick Command:</strong></p>
+                                    <pre id="instagram-command" class="bg-light p-2"></pre>
+                                </div>
+                            </div>
+                            <div class="tab-pane fade" id="facebook" role="tabpanel" aria-labelledby="facebook-tab">
+                                <h5>Facebook Image Dimensions</h5>
+                                <p>Recommended: 1200 x 630 pixels (1.91:1 ratio)</p>
+                                <hr>
+                                <div class="crop-info">
+                                    <p><strong>Crop Position:</strong> <span id="facebook-position">X: 0, Y: 0</span></p>
+                                    <p><strong>ImageMagick Command:</strong></p>
+                                    <pre id="facebook-command" class="bg-light p-2"></pre>
+                                </div>
+                            </div>
+                            <div class="tab-pane fade" id="threads" role="tabpanel" aria-labelledby="threads-tab">
+                                <h5>Threads Image Dimensions</h5>
+                                <p>Recommended: 1080 x 1350 pixels (4:5 ratio)</p>
+                                <hr>
+                                <div class="crop-info">
+                                    <p><strong>Crop Position:</strong> <span id="threads-position">X: 0, Y: 0</span></p>
+                                    <p><strong>ImageMagick Command:</strong></p>
+                                    <pre id="threads-command" class="bg-light p-2"></pre>
+                                </div>
+                            </div>
+                            <div class="tab-pane fade" id="twitter" role="tabpanel" aria-labelledby="twitter-tab">
+                                <h5>Twitter Image Dimensions</h5>
+                                <p>Recommended: 1200 x 675 pixels (16:9 ratio)</p>
+                                <hr>
+                                <div class="crop-info">
+                                    <p><strong>Crop Position:</strong> <span id="twitter-position">X: 0, Y: 0</span></p>
+                                    <p><strong>ImageMagick Command:</strong></p>
+                                    <pre id="twitter-command" class="bg-light p-2"></pre>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://code.jquery.com/ui/1.13.2/jquery-ui.min.js"></script>
+    <script src="crop.js"></script>
+</body>
+</html>
