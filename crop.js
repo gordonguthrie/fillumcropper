@@ -829,3 +829,56 @@ function getMinimumScaleForPlatform(platform) {
   // Add a small buffer (5%) to ensure the image fully covers the frame
   return minScale * 1.05;
 }
+// Add this to your document.ready function
+$(document).ready(function() {
+  // Existing code...
+
+  // Add character counter functionality for all textareas
+  $('textarea[id$="-text"]').on('input', function() {
+    const platform = this.id.replace('-text', '');
+    const charCount = $(this).val().length;
+    const maxLength = $(this).attr('maxlength');
+    
+    // Update the character count
+    $(`#${platform}-char-count`).text(charCount);
+    
+    // Add visual feedback when approaching the limit
+    if (charCount >= maxLength * 0.9) {
+      $(`#${platform}-char-count`).addClass('text-danger');
+    } else {
+      $(`#${platform}-char-count`).removeClass('text-danger');
+    }
+    
+    // Update the command to include the post text
+    updateCropInfo();
+  });
+  
+  // Modify the updateCropInfo function to include the post text
+  const originalUpdateCropInfo = updateCropInfo;
+  updateCropInfo = function() {
+    // Call the original function first
+    originalUpdateCropInfo();
+    
+    // Get the post text for the current platform
+    const postText = $(`#${currentPlatform}-text`).val();
+    
+    // If there's post text, update the command to include it
+    if (postText && postText.trim().length > 0) {
+      const currentCommand = $(`#${currentPlatform}-command`).text();
+      // Only append the text info if it's not already there
+      if (!currentCommand.includes("Post text:")) {
+        $(`#${currentPlatform}-command`).append(`\n\n# Post text:\n${postText}`);
+      } else {
+        // Replace the existing post text
+        const newCommand = currentCommand.replace(/# Post text:[\s\S]*$/, `# Post text:\n${postText}`);
+        $(`#${currentPlatform}-command`).text(newCommand);
+      }
+    }
+  };
+  
+  // Initialize character counters
+  $('textarea[id$="-text"]').each(function() {
+    const platform = this.id.replace('-text', '');
+    $(`#${platform}-char-count`).text(0);
+  });
+});
