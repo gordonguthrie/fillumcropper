@@ -491,6 +491,7 @@ $(document).ready(function () {
     const settings = platformSettings[currentPlatform];
     settings.imageX -= 10;
     $imageContainer.css("left", settings.imageX + "px");
+    ensureImageCoversFrame();
     updateCropInfo();
   });
 
@@ -499,6 +500,7 @@ $(document).ready(function () {
     const settings = platformSettings[currentPlatform];
     settings.imageX += 10;
     $imageContainer.css("left", settings.imageX + "px");
+    ensureImageCoversFrame();
     updateCropInfo();
   });
 
@@ -507,6 +509,7 @@ $(document).ready(function () {
     const settings = platformSettings[currentPlatform];
     settings.imageY -= 10;
     $imageContainer.css("top", settings.imageY + "px");
+    ensureImageCoversFrame();
     updateCropInfo();
   });
 
@@ -515,9 +518,9 @@ $(document).ready(function () {
     const settings = platformSettings[currentPlatform];
     settings.imageY += 10;
     $imageContainer.css("top", settings.imageY + "px");
+    ensureImageCoversFrame();
     updateCropInfo();
   });
-
   // Handle tab changes
   $(".nav-link").on("click", function () {
     // Save current platform settings before switching
