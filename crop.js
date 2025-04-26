@@ -169,7 +169,11 @@ $(document).ready(function() {
         const targetWidth = platformDimensions[currentPlatform].width;
         const targetHeight = platformDimensions[currentPlatform].height;
         
-        const command = `convert "${imageName}" -crop ${originalWidth}x${originalHeight}+${originalX}+${originalY} -resize ${targetWidth}x${targetHeight} "${currentPlatform}_${imageName}"`;
+        // Format the command over multiple lines
+        const command = `convert "${imageName}" \\
+    -crop ${originalWidth}x${originalHeight}+${originalX}+${originalY} \\
+    -resize ${targetWidth}x${targetHeight} \\
+    "${currentPlatform}_${imageName}"`;
         
         $(`#${currentPlatform}-command`).text(command);
     }
