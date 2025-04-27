@@ -41,84 +41,102 @@ $(document).ready(function () {
   const $imageContainer = $("#imageContainer");
   const $cropFrame = $("#cropFrame");
 
-  // Add event handler for the post button
-  $("#post-button").on("click", function() {
-    // Create an object to store the data for each platform
-    const postData = {};
-    const selectedPlatforms = [];
+// Add event handler for the post button
+$("#post-button").on("click", function() {
+// Create an object to store the data for each platform
+const postData = {};
+const selectedPlatforms = [];
     
-    // Check each platform checkbox
-    $("input[type=checkbox][id$='-check']").each(function() {
-      // Get the platform name from the checkbox ID
-      const platform = this.id.replace("-check", "");
-      
-      // If the checkbox is checked, gather data for this platform
-      if ($(this).prop("checked")) {
+// Check each platform checkbox
+$("input[type=checkbox][id$='-check']").each(function() {
+    // Get the platform name from the checkbox ID
+    const platform = this.id.replace("-check", "");
+        
+    // If the checkbox is checked, gather data for this platform
+    if ($(this).prop("checked")) {
         // Get the image name from URL parameters
         const imageName = new URLSearchParams(window.location.search).get("image");
-        
-        // Get the ImageMagick command
-        const command = $(`#${platform}-command`).text();
-        
+            
+        // Get the separate crop and resize commands
+        const cropCommand = $(`#${platform}-crop-command`).text();
+        const resizeCommand = $(`#${platform}-resize-command`).text();
+            
         // Get the post text
         const postText = $(`#${platform}-text`).val();
-        
+            
         // Get the alt text
         const altText = $(`#${platform}-alt-text`).val() || null;
-        
-        // Add this platform's data to the postData object
+            
+        // Add this platform's data to the postData object with separate crop and resize
         postData[platform] = {
-          image: imageName,
-          command: command,
-          post: postText,
-          altText: altText
+            image: imageName,
+            crop: cropCommand,
+            resize: resizeCommand,
+            post: postText,
+            altText: altText
         };
-        
+            
         // Add to selected platforms list for the dialog
         selectedPlatforms.push({
-          name: platform.charAt(0).toUpperCase() + platform.slice(1), // Capitalize first letter
-          postText: postText,
-          altText: altText
+            name: platform.charAt(0).toUpperCase() + platform.slice(1), // Capitalize first letter
+            postText: postText,
+            altText: altText
         });
-      }
-    });
-    
-    // Log the JSON data to the console
-    console.log("Post Data:", JSON.stringify(postData, null, 2));
-    
-    // Clear the platforms list
-    $("#platformsList").empty();
-    
-    // Add each selected platform to the dialog
-    if (selectedPlatforms.length === 0) {
-      $("#platformsList").append(`<li class="list-group-item text-danger">No platforms selected</li>`);
-    } else {
-      selectedPlatforms.forEach(platform => {
-        $("#platformsList").append(`
-          <li class="list-group-item">
-            <div class="fw-bold">${platform.name}</div>
-            ${platform.postText === "" ? 
-              `<div class="text-danger small"><i class="bi bi-exclamation-triangle-fill"></i> No text in post</div>` : ''}
-            ${platform.altText === null ? 
-              `<div class="text-warning small"><i class="bi bi-exclamation-triangle"></i> No ALT text</div>` : ''}
-          </li>
-        `);
-      });
     }
+});
+        
+// Clear the platforms list
+$("#platformsList").empty();
     
-    // Initialize and show the modal
-    const postConfirmDialog = new bootstrap.Modal(document.getElementById('postConfirmDialog'));
-    postConfirmDialog.show();
-    
-    // Handle the confirm button click
-    $("#confirmPostBtn").off("click").on("click", function() {
-      // Here you would implement the actual posting functionality
-      alert("Posting to selected platforms...");
-      postConfirmDialog.hide();
-      
-      // You could make AJAX calls here to your backend to handle the actual posting
+// Add each selected platform to the dialog
+if (selectedPlatforms.length === 0) {
+    $("#platformsList").append(`<li class="list-group-item text-danger">No platforms selected</li>`);
+} else {
+    selectedPlatforms.forEach(platform => {
+        $("#platformsList").append(`
+            <li class="list-group-item">
+                <div class="fw-bold">${platform.name}</div>
+                ${platform.postText === "" ? 
+                    `<div class="text-danger small"><i class="bi bi-exclamation-triangle-fill"></i> No text in post</div>` : ''}
+                ${platform.altText === null ? 
+                    `<div class="text-warning small"><i class="bi bi-exclamation-triangle"></i> No ALT text</div>` : ''}
+            </li>
+        `);
     });
+}
+    
+// Store the post data in a data attribute for the confirm button to use
+$("#confirmPostBtn").data("postData", postData);
+    
+// Initialize and show the modal
+const postConfirmDialog = new bootstrap.Modal(document.getElementById('postConfirmDialog'));
+postConfirmDialog.show();
+});
+
+// Set up the confirm button event handler outside of the post button click handler
+// This ensures it's only set up once and won't have multiple handlers
+$("#confirmPostBtn").off("click").on("click", function() {
+  // Get the post data from the data attribute
+  const postData = $(this).data("postData");
+        
+  // Send the data to the server
+  $.ajax({
+      url: '/cgi-bin/request_queue.cgi',
+      type: 'POST',
+      contentType: 'application/json',
+      data: JSON.stringify(postData),
+      success: function(response) {
+          // Hide the modal
+          const postConfirmDialog = bootstrap.Modal.getInstance(document.getElementById('postConfirmDialog'));
+          postConfirmDialog.hide();
+      },
+      error: function(xhr, status, error) {
+          console.error("Error details:", xhr, status, error);
+          // Show error message
+          alert("Error queuing posts: " + error);
+      }
   });
+});
 
   // Add character counter functionality for all ALT text textareas
   $('textarea[id$="-alt-text"]').each(function() {
@@ -289,17 +307,17 @@ $(document).ready(function () {
     // Update position display
     $(`#${currentPlatform}-position`).text(`X: ${originalX}, Y: ${originalY}`);
 
-    // Generate ImageMagick command
+    // Generate separate crop and resize values
     const targetWidth = platformDimensions[currentPlatform].width;
     const targetHeight = platformDimensions[currentPlatform].height;
 
-    // Format the command over multiple lines
-    const command = `convert "${imageName}" \\
-    -crop ${originalWidth}x${originalHeight}+${originalX}+${originalY} \\
-    -resize ${targetWidth}x${targetHeight} \\
-    "${currentPlatform}_${imageName}"`;
+    // Create separate crop and resize commands
+    const cropCommand = `${originalWidth}x${originalHeight}+${originalX}+${originalY}`;
+    const resizeCommand = `${targetWidth}x${targetHeight}`;
 
-    $(`#${currentPlatform}-command`).text(command);
+    // Update the separate command fields
+    $(`#${currentPlatform}-crop-command`).text(cropCommand);
+    $(`#${currentPlatform}-resize-command`).text(resizeCommand);
   }
 
   // Modify the tab change handler to properly update everything
