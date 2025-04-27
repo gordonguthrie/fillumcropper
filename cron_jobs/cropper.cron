@@ -1,0 +1,111 @@
+#!/bin/sh
+
+# Exit on error, treat unset variables as errors, and propagate pipe failures
+set -euo pipefail
+
+# Debug flag
+DEBUG=TRUE
+
+# Debug logging function
+log_debug() {
+    if [ "$DEBUG" = "TRUE" ]; then
+        echo "[DEBUG] $(date +"%Y-%m-%d %H:%M:%S") - $1"
+    fi
+}
+
+log_debug "Script started"
+
+# Set base directories
+IMAGES="/home/gordon/fillumcropper/uploads"
+REQUEST_QUEUE="/home/gordon/fillumcropper/request_queue"
+REQUEST_ARCHIVE="/home/gordon/fillumcropper/request_queue_archive"
+OUTPUT_QUEUE="/home/gordon/fillumcropper/output_queue"
+
+log_debug "Base directories set: REQUEST_QUEUE=$REQUEST_QUEUE, REQUEST_ARCHIVE=$REQUEST_ARCHIVE, OUTPUT_QUEUE=$OUTPUT_QUEUE"
+
+mkdir -p "$REQUEST_ARCHIVE"
+mkdir -p "$OUTPUT_QUEUE/bluesky"
+mkdir -p "$OUTPUT_QUEUE/instagram"
+mkdir -p "$OUTPUT_QUEUE/facebook"
+mkdir -p "$OUTPUT_QUEUE/threads"
+mkdir -p "$OUTPUT_QUEUE/twitter"
+
+log_debug "Created necessary directories"
+
+# Get current timestamp in the same format as the files
+CURRENT_TIMESTAMP=$(date +"%y_%m_%d_%H_%M_%S")
+log_debug "Current timestamp: $CURRENT_TIMESTAMP"
+
+# Process each request file
+log_debug "Starting to process request files"
+for file in "$REQUEST_QUEUE"/*_request.json; do
+  # Skip if no files match
+  [ -e "$file" ] || { log_debug "No files to process"; continue; }
+  
+  # Extract timestamp from filename
+  filename=$(basename "$file")
+  file_timestamp=${filename%_request.json}
+  
+  log_debug "Processing file: $filename with timestamp: $file_timestamp"
+  
+  # Compare timestamps (only process files in the past)
+  # Use test command for string comparison
+  if [ "$file_timestamp" \< "$CURRENT_TIMESTAMP" ]; then
+    log_debug "File timestamp is in the past, processing"
+    
+    # Read the JSON file
+    json_content=$(cat "$file")
+    log_debug "Read JSON content from file"
+    
+    # Process each social media platform
+    for platform in bluesky instagram facebook threads twitter; do
+      log_debug "Checking platform: $platform"
+      
+      # Check if the platform exists in the JSON
+      if echo "$json_content" | grep -q "\"$platform\""; then
+        log_debug "Platform $platform found in JSON"
+        
+        # Extract values using jq
+        image=$(echo "$json_content" | jq -r ".$platform.image")
+        crop=$(echo "$json_content" | jq -r ".$platform.crop")
+        resize=$(echo "$json_content" | jq -r ".$platform.resize")
+        post=$(echo "$json_content" | jq -r ".$platform.post")
+        alt_text=$(echo "$json_content" | jq -r ".$platform.altText")
+        schedule_time=$(echo "$json_content" | jq -r ".$platform.scheduleTime")
+        
+        log_debug "Extracted values for $platform: image=$image, crop=$crop, resize=$resize, schedule_time=$schedule_time"
+        
+        # Create output directory if it doesn't exist
+        output_dir="$OUTPUT_QUEUE/$platform/$schedule_time"
+        mkdir -p "$output_dir"
+        log_debug "Created output directory: $output_dir"
+        
+        # Set input and output image paths
+        input_image="$IMAGES/$image"
+        output_image="$output_dir/$image"
+        log_debug "Input image: $input_image, Output image: $output_image"
+        
+        # Execute ImageMagick command to crop and resize
+        log_debug "Running ImageMagick convert command"
+        convert "$input_image" -crop "$crop" -resize "$resize" "$output_image"
+        log_debug "ImageMagick conversion completed"
+        
+        # Create JSON metadata file
+        metadata="{\"image\":\"$image\",\"post\":\"$post\",\"altText\":\"$alt_text\"}"
+        echo "$metadata" > "$output_dir/metadata.json"
+        log_debug "Created metadata.json file in $output_dir"
+      else
+        log_debug "Platform $platform not found in JSON, skipping"
+      fi
+    done
+    
+    # Move processed file to archive
+    log_debug "Moving processed file $file to archive"
+    mv "$file" "$REQUEST_ARCHIVE/"
+    log_debug "File moved to archive"
+  else
+    log_debug "File timestamp is in the future, skipping"
+  fi
+done
+
+log_debug "Script completed"
