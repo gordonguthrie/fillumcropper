@@ -41,6 +41,85 @@ $(document).ready(function () {
   const $imageContainer = $("#imageContainer");
   const $cropFrame = $("#cropFrame");
 
+  // Add event handler for the post button
+  $("#post-button").on("click", function() {
+    // Create an object to store the data for each platform
+    const postData = {};
+    const selectedPlatforms = [];
+    
+    // Check each platform checkbox
+    $("input[type=checkbox][id$='-check']").each(function() {
+      // Get the platform name from the checkbox ID
+      const platform = this.id.replace("-check", "");
+      
+      // If the checkbox is checked, gather data for this platform
+      if ($(this).prop("checked")) {
+        // Get the image name from URL parameters
+        const imageName = new URLSearchParams(window.location.search).get("image");
+        
+        // Get the ImageMagick command
+        const command = $(`#${platform}-command`).text();
+        
+        // Get the post text
+        const postText = $(`#${platform}-text`).val();
+        
+        // Get the alt text
+        const altText = $(`#${platform}-alt-text`).val() || null;
+        
+        // Add this platform's data to the postData object
+        postData[platform] = {
+          image: imageName,
+          command: command,
+          post: postText,
+          altText: altText
+        };
+        
+        // Add to selected platforms list for the dialog
+        selectedPlatforms.push({
+          name: platform.charAt(0).toUpperCase() + platform.slice(1), // Capitalize first letter
+          postText: postText,
+          altText: altText
+        });
+      }
+    });
+    
+    // Log the JSON data to the console
+    console.log("Post Data:", JSON.stringify(postData, null, 2));
+    
+    // Clear the platforms list
+    $("#platformsList").empty();
+    
+    // Add each selected platform to the dialog
+    if (selectedPlatforms.length === 0) {
+      $("#platformsList").append(`<li class="list-group-item text-danger">No platforms selected</li>`);
+    } else {
+      selectedPlatforms.forEach(platform => {
+        $("#platformsList").append(`
+          <li class="list-group-item">
+            <div class="fw-bold">${platform.name}</div>
+            ${platform.postText === "" ? 
+              `<div class="text-danger small"><i class="bi bi-exclamation-triangle-fill"></i> No text in post</div>` : ''}
+            ${platform.altText === null ? 
+              `<div class="text-warning small"><i class="bi bi-exclamation-triangle"></i> No ALT text</div>` : ''}
+          </li>
+        `);
+      });
+    }
+    
+    // Initialize and show the modal
+    const postConfirmDialog = new bootstrap.Modal(document.getElementById('postConfirmDialog'));
+    postConfirmDialog.show();
+    
+    // Handle the confirm button click
+    $("#confirmPostBtn").off("click").on("click", function() {
+      // Here you would implement the actual posting functionality
+      alert("Posting to selected platforms...");
+      postConfirmDialog.hide();
+      
+      // You could make AJAX calls here to your backend to handle the actual posting
+    });
+  });
+
   // Add character counter functionality for all ALT text textareas
   $('textarea[id$="-alt-text"]').each(function() {
     const platform = this.id.replace('-alt-text', '');
