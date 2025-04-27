@@ -146,24 +146,19 @@
                         <div class="tab-content" id="socialMediaTabContent">
                             <div class="tab-pane fade show active" id="bluesky" role="tabpanel"
                                 aria-labelledby="bluesky-tab">
-                                <h5>Bluesky Image Dimensions</h5>
-                                <p><small class="text-muted">Recommended: 1200 x 675 pixels (16:9 ratio)</small></p>
-                                <hr>
                                 <div class="crop-info">
                                     <p><strong>Zoom:</strong> <span id="bluesky-min-zoom">Min: --</span>
                                         < <strong><span id="bluesky-zoom">100%</span></strong>
                                             < <span id="bluesky-max-zoom">Max: --</span>
                                     </p>
                                     <p><strong>Crop Position:</strong> <span id="bluesky-position">X: 0, Y: 0</span></p>
-                                    <div class="bg-light p-2 rounded small">
-                                        <p><strong>Crop:</strong> <span id="bluesky-crop-command"></span></p>
-                                        <p><strong>Resize:</strong> <span id="bluesky-resize-command"></span></p>
-                                    </div>
+                                    <p><strong>Crop:</strong> <span id="bluesky-crop-command"></span></p>
+                                    <p><strong>Resize:</strong> <span id="bluesky-resize-command"></span></p>
                                 </div>
 
                                 <!-- Add text area for Bluesky -->
                                 <div class="mt-3">
-                                    <textarea id="bluesky-text" class="form-control" rows="4" maxlength="300"
+                                    <textarea id="bluesky-text" class="form-control" rows="3" maxlength="300"
                                         placeholder="Enter your Bluesky post text here..."></textarea>
                                     <div class="d-flex justify-content-between mt-1">
                                         <small class="text-muted">Max 300 characters. Supports markdown
@@ -173,10 +168,7 @@
                                         </small>
                                     </div>
                                 </div>
-                                <!-- Corrected Bluesky ALT text textarea with proper 2000 character limit -->
                                 <div class="mt-3">
-                                    <label for="bluesky-alt-text" class="form-label">ALT Text (Image
-                                        Description)</label>
                                     <textarea id="bluesky-alt-text" class="form-control" rows="3" maxlength="2000"
                                         placeholder="Enter image description for accessibility..."></textarea>
                                     <div class="d-flex justify-content-between mt-1">
@@ -187,11 +179,22 @@
                                         </small>
                                     </div>
                                 </div>
+                                <!-- For Bluesky tab -->
+                                <div class="mt-3 d-flex align-items-center">
+                                    <label for="bluesky-schedule-time"
+                                        class="form-label me-2 mb-0"><strong>After</strong></label>
+                                    <input type="datetime-local" id="bluesky-schedule-time" class="form-control"
+                                        required>
+                                </div>
+                                <!-- Add this at the end of the Bluesky tab content, just before the closing </div> -->
+                                <div class="mt-3">
+                                    <button id="sync-all-platforms" class="btn btn-outline-primary">
+                                        <i class="bi bi-arrow-repeat"></i> Sync to All Platforms
+                                    </button>
+                                </div>
+
                             </div>
                             <div class="tab-pane fade" id="instagram" role="tabpanel" aria-labelledby="instagram-tab">
-                                <h5>Instagram Image Dimensions</h5>
-                                <p><small class="text-muted">Recommended: 1080 x 1080 pixels (1:1 square)</small></p>
-                                <hr>
                                 <div class="crop-info">
                                     <p><strong>Zoom:</strong> <span id="instagram-min-zoom">Min: --</span>
                                         < <strong><span id="instagram-zoom">100%</span></strong>
@@ -199,15 +202,13 @@
                                     </p>
                                     <p><strong>Crop Position:</strong> <span id="instagram-position">X: 0, Y: 0</span>
                                     </p>
-                                    <div class="bg-light p-2 rounded small">
-                                        <p><strong>Crop:</strong> <span id="instgram-crop-command"></span></p>
-                                        <p><strong>Resize:</strong> <span id="instagram-resize-command"></span></p>
-                                    </div>
+                                    <p><strong>Crop:</strong> <span id="instagram-crop-command"></span></p>
+                                    <p><strong>Resize:</strong> <span id="instagram-resize-command"></span></p>
                                 </div>
 
                                 <!-- Add text area for Instagram -->
                                 <div class="mt-3">
-                                    <textarea id="instagram-text" class="form-control" rows="4" maxlength="2200"
+                                    <textarea id="instagram-text" class="form-control" rows="3" maxlength="2200"
                                         placeholder="Enter your Instagram post text here..."></textarea>
                                     <div class="d-flex justify-content-between mt-1">
                                         <small class="text-muted">Max 2,200 characters. Hashtags and @mentions are
@@ -229,11 +230,16 @@
                                         </small>
                                     </div>
                                 </div>
+                                <!-- For Instagram tab -->
+                                <div class="mt-3 d-flex align-items-center">
+                                    <label for="instagram-schedule-time"
+                                        class="form-label me-2 mb-0"><strong>After</strong></label>
+                                    <input type="datetime-local" id="instagram-schedule-time" class="form-control"
+                                        required>
+                                </div>
+
                             </div>
                             <div class="tab-pane fade" id="facebook" role="tabpanel" aria-labelledby="facebook-tab">
-                                <h5>Facebook Image Dimensions</h5>
-                                <p><small class="text-muted">Recommended: 1200 x 630 pixels (1.91:1 ratio)</small></p>
-                                <hr>
                                 <div class="crop-info">
                                     <p><strong>Zoom:</strong> <span id="facebook-min-zoom">Min: --</span>
                                         < <strong><span id="facebook-zoom">100%</span></strong>
@@ -241,15 +247,13 @@
                                     </p>
                                     <p><strong>Crop Position:</strong> <span id="facebook-position">X: 0, Y: 0</span>
                                     </p>
-                                    <div class="bg-light p-2 rounded small">
-                                        <p><strong>Crop:</strong> <span id="facebook-crop-command"></span></p>
-                                        <p><strong>Resize:</strong> <span id="facebook-resize-command"></span></p>
-                                    </div>
+                                    <p><strong>Crop:</strong> <span id="facebook-crop-command"></span></p>
+                                    <p><strong>Resize:</strong> <span id="facebook-resize-command"></span></p>
                                 </div>
 
                                 <!-- Add text area for Facebook -->
                                 <div class="mt-3">
-                                    <textarea id="facebook-text" class="form-control" rows="4" maxlength="63206"
+                                    <textarea id="facebook-text" class="form-control" rows="3" maxlength="63206"
                                         placeholder="Enter your Facebook post text here..."></textarea>
                                     <div class="d-flex justify-content-between mt-1">
                                         <small class="text-muted">Max 63,206 characters. Supports formatting, hashtags,
@@ -271,26 +275,29 @@
                                         </small>
                                     </div>
                                 </div>
+                                <!-- For Facebook tab -->
+                                <div class="mt-3 d-flex align-items-center">
+                                    <label for="facebook-schedule-time"
+                                        class="form-label me-2 mb-0"><strong>After</strong></label>
+                                    <input type="datetime-local" id="facebook-schedule-time" class="form-control"
+                                        required>
+                                </div>
+
                             </div>
                             <div class="tab-pane fade" id="threads" role="tabpanel" aria-labelledby="threads-tab">
-                                <h5>Threads Image Dimensions</h5>
-                                <p><small class="text-muted">Recommended: 1080 x 1350 pixels (4:5 ratio)</small></p>
-                                <hr>
                                 <div class="crop-info">
                                     <p><strong>Zoom:</strong> <span id="threads-min-zoom">Min: --</span>
                                         < <strong><span id="threads-zoom">100%</span></strong>
                                             < <span id="threads-max-zoom">Max: --</span>
                                     </p>
                                     <p><strong>Crop Position:</strong> <span id="threads-position">X: 0, Y: 0</span></p>
-                                    <div class="bg-light p-2 rounded small">
-                                        <p><strong>Crop:</strong> <span id="threads-crop-command"></span></p>
-                                        <p><strong>Resize:</strong> <span id="threads-resize-command"></span></p>
-                                    </div>
+                                    <p><strong>Crop:</strong> <span id="threads-crop-command"></span></p>
+                                    <p><strong>Resize:</strong> <span id="threads-resize-command"></span></p>
                                 </div>
 
                                 <!-- Add text area for Threads -->
                                 <div class="mt-3">
-                                    <textarea id="threads-text" class="form-control" rows="4" maxlength="500"
+                                    <textarea id="threads-text" class="form-control" rows="3" maxlength="500"
                                         placeholder="Enter your Threads post text here..."></textarea>
                                     <div class="d-flex justify-content-between mt-1">
                                         <small class="text-muted">Max 500 characters. Supports hashtags and
@@ -312,83 +319,96 @@
                                         </small>
                                     </div>
                                 </div>
+                                <!-- For Threads tab -->
+                                <div class="mt-3 d-flex align-items-center">
+                                    <label for="threads-schedule-time"
+                                        class="form-label me-2 mb-0"><strong>After</strong></label>
+                                    <input type="datetime-local" id="threads-schedule-time" class="form-control"
+                                        required>
+                                </div>
+
                             </div>
                             <div class="tab-pane fade" id="twitter" role="tabpanel" aria-labelledby="twitter-tab">
-                                <h5>Twitter Image Dimensions</h5>
-                                <p><small class="text-muted">Recommended: 1200 x 675 pixels (16:9 ratio)</small></p>
-                                <hr>
                                 <div class="crop-info">
                                     <p><strong>Zoom:</strong> <span id="twitter-min-zoom">Min: --</span>
                                         < <strong><span id="twitter-zoom">100%</span></strong>
                                             < <span id="twitter-max-zoom">Max: --</span>
                                     </p>
                                     <p><strong>Crop Position:</strong> <span id="twitter-position">X: 0, Y: 0</span></p>
-                                    <div class="bg-light p-2 rounded small">
-                                        <p><strong>Crop:</strong> <span id="twitter-crop-command"></span></p>
-                                        <p><strong>Resize:</strong> <span id="twitter-resize-command"></span></p>
+                                    <p><strong>Crop:</strong> <span id="twitter-crop-command"></span></p>
+                                    <p><strong>Resize:</strong> <span id="twitter-resize-command"></span></p>
+
+                                    <!-- Add text area for Twitter -->
+                                    <div class="mt-3">
+                                        <textarea id="twitter-text" class="form-control" rows="3" maxlength="280"
+                                            placeholder="Enter your Twitter post text here..."></textarea>
+                                        <div class="d-flex justify-content-between mt-1">
+                                            <small class="text-muted">Max 280 characters. URLs count as 23 characters
+                                                regardless of length.</small>
+                                            <small class="text-muted">
+                                                <span id="twitter-char-count">0</span>/280
+                                            </small>
+                                        </div>
+                                    </div>
+                                    <!-- Add this after the existing textarea in the Twitter tab -->
+                                    <div class="mt-3">
+                                        <textarea id="twitter-alt-text" class="form-control" rows="3" maxlength="1000"
+                                            placeholder="Enter image description for accessibility..."></textarea>
+                                        <div class="d-flex justify-content-between mt-1">
+                                            <small class="text-muted">Max 1,000 characters. Describe the image clearly
+                                                for
+                                                screen readers.</small>
+                                            <small class="text-muted">
+                                                <span id="twitter-alt-char-count">0</span>/1000
+                                            </small>
+                                        </div>
+                                    </div>
+                                    <!-- For Twitter tab -->
+                                    <div class="mt-3 d-flex align-items-center">
+                                        <label for="twitter-schedule-time" class="form-label me-2 mb-0">
+                                            <strong>After</strong></label>
+                                        <input type="datetime-local" id="twitter-schedule-time" class="form-control"
+                                            required>
                                     </div>
 
-                                <!-- Add text area for Twitter -->
-                                <div class="mt-3">
-                                    <textarea id="twitter-text" class="form-control" rows="4" maxlength="280"
-                                        placeholder="Enter your Twitter post text here..."></textarea>
-                                    <div class="d-flex justify-content-between mt-1">
-                                        <small class="text-muted">Max 280 characters. URLs count as 23 characters
-                                            regardless of length.</small>
-                                        <small class="text-muted">
-                                            <span id="twitter-char-count">0</span>/280
-                                        </small>
-                                    </div>
-                                </div>
-                                <!-- Add this after the existing textarea in the Twitter tab -->
-                                <div class="mt-3">
-                                    <textarea id="twitter-alt-text" class="form-control" rows="3" maxlength="1000"
-                                        placeholder="Enter image description for accessibility..."></textarea>
-                                    <div class="d-flex justify-content-between mt-1">
-                                        <small class="text-muted">Max 1,000 characters. Describe the image clearly for
-                                            screen readers.</small>
-                                        <small class="text-muted">
-                                            <span id="twitter-alt-char-count">0</span>/1000
-                                        </small>
-                                    </div>
                                 </div>
                             </div>
                         </div>
                     </div>
                 </div>
-            </div>
-        </div>
 
-        <!-- Post Confirmation Dialog -->
-        <div class="modal fade" id="postConfirmDialog" tabindex="-1" aria-labelledby="postConfirmDialogLabel"
-            aria-hidden="true">
-            <div class="modal-dialog">
-                <div class="modal-content">
-                    <div class="modal-header">
-                        <h5 class="modal-title" id="postConfirmDialogLabel">Confirm Post</h5>
-                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                    </div>
-                    <div class="modal-body">
-                        <h6>You are about to post to the following platforms:</h6>
-                        <ul class="list-group mb-3" id="platformsList">
-                            <!-- Platform items will be inserted here dynamically -->
-                        </ul>
-                        <div class="alert alert-info">
-                            <i class="bi bi-info-circle"></i> Please review the details above before proceeding.
+                <!-- Post Confirmation Dialog -->
+                <div class="modal fade" id="postConfirmDialog" tabindex="-1" aria-labelledby="postConfirmDialogLabel"
+                    aria-hidden="true">
+                    <div class="modal-dialog">
+                        <div class="modal-content">
+                            <div class="modal-header">
+                                <h5 class="modal-title" id="postConfirmDialogLabel">Confirm Post</h5>
+                                <button type="button" class="btn-close" data-bs-dismiss="modal"
+                                    aria-label="Close"></button>
+                            </div>
+                            <div class="modal-body">
+                                <h6>You are about to post to the following platforms:</h6>
+                                <ul class="list-group mb-3" id="platformsList">
+                                    <!-- Platform items will be inserted here dynamically -->
+                                </ul>
+                                <div class="alert alert-info">
+                                    <i class="bi bi-info-circle"></i> Please review the details above before proceeding.
+                                </div>
+                            </div>
+                            <div class="modal-footer">
+                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                                <button type="button" class="btn btn-primary" id="confirmPostBtn">Post</button>
+                            </div>
                         </div>
                     </div>
-                    <div class="modal-footer">
-                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                        <button type="button" class="btn btn-primary" id="confirmPostBtn">Post</button>
-                    </div>
                 </div>
-            </div>
-        </div>
 
-        <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
-        <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-        <script src="https://code.jquery.com/ui/1.13.2/jquery-ui.min.js"></script>
-        <script src="crop.js"></script>
+                <script
+                    src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
+                <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+                <script src="https://code.jquery.com/ui/1.13.2/jquery-ui.min.js"></script>
+                <script src="crop.js"></script>
 </body>
 
 </html>

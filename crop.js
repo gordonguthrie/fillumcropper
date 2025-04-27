@@ -1,4 +1,58 @@
 $(document).ready(function () {
+      // Initialize date pickers
+      initDatePickers()
+    
+      // Add the Sync button to the Bluesky tab only
+      $("#bluesky-tab-pane").append(`
+        <div class="mt-3">
+          <button id="sync-all-platforms" class="btn btn-outline-primary btn-sm">
+            <i class="bi bi-arrow-repeat"></i> Sync to All Platforms
+          </button>
+        </div>
+      `)
+    
+      // Add event handler for the Sync button
+      $("#sync-all-platforms").on("click", function() {
+        // Get Bluesky values
+        const blueskyPostText = $("#bluesky-text").val()
+        const blueskyAltText = $("#bluesky-alt-text").val()
+        const blueskyScheduleTime = $("#bluesky-schedule-time").val()
+      
+        // Get all platform names except Bluesky
+        const platforms = Object.keys(platformDimensions).filter(platform => platform !== "bluesky")
+      
+        // Copy values to all other platforms
+        platforms.forEach(platform => {
+          // Copy post text
+          $(`#${platform}-text`).val(blueskyPostText)
+          // Trigger input event to update character count
+          $(`#${platform}-text`).trigger('input')
+        
+          // Copy ALT text
+          $(`#${platform}-alt-text`).val(blueskyAltText)
+          // Trigger input event to update character count
+          $(`#${platform}-alt-text`).trigger('input')
+        
+          // Copy schedule time
+          $(`#${platform}-schedule-time`).val(blueskyScheduleTime)
+        
+          // Check the platform checkbox
+          $(`#${platform}-check`).prop('checked', true)
+        })
+      
+        // Show a temporary success message
+        const $button = $(this)
+        const originalText = $button.html()
+        $button.html('<i class="bi bi-check-circle"></i> Synced!')
+        $button.addClass('btn-success').removeClass('btn-outline-primary')
+      
+        // Restore the button after 2 seconds
+        setTimeout(function() {
+          $button.html(originalText)
+          $button.addClass('btn-outline-primary').removeClass('btn-success')
+        }, 2000)
+      })
+      
   // Social media platform dimensions (width, height)
   const platformDimensions = {
     bluesky: { width: 1200, height: 675 },
@@ -41,76 +95,102 @@ $(document).ready(function () {
   const $imageContainer = $("#imageContainer");
   const $cropFrame = $("#cropFrame");
 
+// Add this function to format the date in the required format
+function formatScheduleTime(dateTimeString) {
+  if (!dateTimeString) return null;
+  
+  const date = new Date(dateTimeString);
+  
+  // Format as yy_mm_dd_hh_MM_ss
+  const yy = String(date.getFullYear()).slice(2); // Last 2 digits of year
+  const mm = String(date.getMonth() + 1).padStart(2, '0');
+  const dd = String(date.getDate()).padStart(2, '0');
+  const hh = String(date.getHours()).padStart(2, '0');
+  const MM = String(date.getMinutes()).padStart(2, '0');
+  const ss = String(date.getSeconds()).padStart(2, '0');
+  
+  return `${yy}_${mm}_${dd}_${hh}_${MM}_${ss}`;
+}
+
 // Add event handler for the post button
 $("#post-button").on("click", function() {
-// Create an object to store the data for each platform
-const postData = {};
-const selectedPlatforms = [];
+    // Create an object to store the data for each platform
+    const postData = {};
+    const selectedPlatforms = [];
     
-// Check each platform checkbox
-$("input[type=checkbox][id$='-check']").each(function() {
-    // Get the platform name from the checkbox ID
-    const platform = this.id.replace("-check", "");
+    // Check each platform checkbox
+    $("input[type=checkbox][id$='-check']").each(function() {
+        // Get the platform name from the checkbox ID
+        const platform = this.id.replace("-check", "");
         
-    // If the checkbox is checked, gather data for this platform
-    if ($(this).prop("checked")) {
-        // Get the image name from URL parameters
-        const imageName = new URLSearchParams(window.location.search).get("image");
+        // If the checkbox is checked, gather data for this platform
+        if ($(this).prop("checked")) {
+            // Get the image name from URL parameters
+            const imageName = new URLSearchParams(window.location.search).get("image");
             
-        // Get the separate crop and resize commands
-        const cropCommand = $(`#${platform}-crop-command`).text();
-        const resizeCommand = $(`#${platform}-resize-command`).text();
+            // Get the separate crop and resize commands
+            const cropCommand = $(`#${platform}-crop-command`).text();
+            const resizeCommand = $(`#${platform}-resize-command`).text();
             
-        // Get the post text
-        const postText = $(`#${platform}-text`).val();
+            // Get the post text
+            const postText = $(`#${platform}-text`).val();
             
-        // Get the alt text
-        const altText = $(`#${platform}-alt-text`).val() || null;
+            // Get the alt text
+            const altText = $(`#${platform}-alt-text`).val() || null;
             
-        // Add this platform's data to the postData object with separate crop and resize
-        postData[platform] = {
-            image: imageName,
-            crop: cropCommand,
-            resize: resizeCommand,
-            post: postText,
-            altText: altText
-        };
+            // Get the scheduled time from the datepicker and format it
+            const rawScheduleTime = $(`#${platform}-schedule-time`).val();
+            const formattedScheduleTime = formatScheduleTime(rawScheduleTime);
             
-        // Add to selected platforms list for the dialog
-        selectedPlatforms.push({
-            name: platform.charAt(0).toUpperCase() + platform.slice(1), // Capitalize first letter
-            postText: postText,
-            altText: altText
+            // Add this platform's data to the postData object with separate crop and resize
+            postData[platform] = {
+                image: imageName,
+                crop: cropCommand,
+                resize: resizeCommand,
+                post: postText,
+                altText: altText,
+                scheduleTime: formattedScheduleTime
+            };
+            
+            // Add to selected platforms list for the dialog
+            // For display purposes, we'll keep using the original date format
+            selectedPlatforms.push({
+                name: platform.charAt(0).toUpperCase() + platform.slice(1), // Capitalize first letter
+                postText: postText,
+                altText: altText,
+                scheduleTime: rawScheduleTime
+            });
+        }
+    });
+    
+    // Clear the platforms list
+    $("#platformsList").empty();
+    
+    // Add each selected platform to the dialog
+    if (selectedPlatforms.length === 0) {
+        $("#platformsList").append(`<li class="list-group-item text-danger">No platforms selected</li>`);
+    } else {
+        selectedPlatforms.forEach(platform => {
+            $("#platformsList").append(`
+                <li class="list-group-item">
+                    <div class="fw-bold">${platform.name}</div>
+                    ${platform.postText === "" ? 
+                        `<div class="text-danger small"><i class="bi bi-exclamation-triangle-fill"></i> No text in post</div>` : ''}
+                    ${platform.altText === null ? 
+                        `<div class="text-warning small"><i class="bi bi-exclamation-triangle"></i> No ALT text</div>` : ''}
+                    ${platform.scheduleTime ? 
+                        `<div class="text-info small"><i class="bi bi-clock"></i> Scheduled for: ${new Date(platform.scheduleTime).toLocaleString()}</div>` : ''}
+                </li>
+            `);
         });
     }
-});
-        
-// Clear the platforms list
-$("#platformsList").empty();
     
-// Add each selected platform to the dialog
-if (selectedPlatforms.length === 0) {
-    $("#platformsList").append(`<li class="list-group-item text-danger">No platforms selected</li>`);
-} else {
-    selectedPlatforms.forEach(platform => {
-        $("#platformsList").append(`
-            <li class="list-group-item">
-                <div class="fw-bold">${platform.name}</div>
-                ${platform.postText === "" ? 
-                    `<div class="text-danger small"><i class="bi bi-exclamation-triangle-fill"></i> No text in post</div>` : ''}
-                ${platform.altText === null ? 
-                    `<div class="text-warning small"><i class="bi bi-exclamation-triangle"></i> No ALT text</div>` : ''}
-            </li>
-        `);
-    });
-}
+    // Store the post data in a data attribute for the confirm button to use
+    $("#confirmPostBtn").data("postData", postData);
     
-// Store the post data in a data attribute for the confirm button to use
-$("#confirmPostBtn").data("postData", postData);
-    
-// Initialize and show the modal
-const postConfirmDialog = new bootstrap.Modal(document.getElementById('postConfirmDialog'));
-postConfirmDialog.show();
+    // Initialize and show the modal
+    const postConfirmDialog = new bootstrap.Modal(document.getElementById('postConfirmDialog'));
+    postConfirmDialog.show();
 });
 
 // Set up the confirm button event handler outside of the post button click handler
@@ -976,4 +1056,23 @@ function getMinimumScaleForPlatform(platform) {
 
   // Add a small buffer (5%) to ensure the image fully covers the frame
   return minScale * 1.05;
+}
+
+// Initialize date pickers with current time
+function initDatePickers() {
+  // Get current date and time
+  const now = new Date();
+  
+  // Format date and time for datetime-local input
+  // Format: YYYY-MM-DDThh:mm
+  const year = now.getFullYear();
+  const month = String(now.getMonth() + 1).padStart(2, '0');
+  const day = String(now.getDate()).padStart(2, '0');
+  const hours = String(now.getHours()).padStart(2, '0');
+  const minutes = String(now.getMinutes()).padStart(2, '0');
+  
+  const formattedDateTime = `${year}-${month}-${day}T${hours}:${minutes}`;
+  
+  // Set the value for each platform's date picker
+  $('input[id$="-schedule-time"]').val(formattedDateTime);
 }
