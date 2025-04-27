@@ -96,8 +96,8 @@
                                         class="bi bi-arrow-down"></i></button>
                             </div>
                         </div>
-                        <div class="text-end"><small>Hold down [SHIFT] for fine and [CTRL][SHIFT] or [META][SHIFT] for
-                                ultra-fine adjustments</small></div>
+                        <div><small>Drag'n'drop Image. Hold down [SHIFT] for fine and [CTRL][SHIFT] or [META][SHIFT] for
+                                ultra-fine adjustments with buttons</small></div>
                     </div>
                     <div class="card-body p-0">
                         <div class="crop-container" id="cropContainer">
@@ -171,15 +171,19 @@
                                         </small>
                                     </div>
                                 </div>
-                                <!-- Add this after the existing textarea in the Bluesky tab -->
+                                <!-- Corrected Bluesky ALT text textarea with proper 2000 character limit -->
                                 <div class="mt-3">
-                                    <textarea id="bluesky-alt-text" class="form-control" rows="3" maxlength="300"
+                                    <label for="bluesky-alt-text" class="form-label">ALT Text (Image Description)</label>
+                                    <textarea 
+                                        id="bluesky-alt-text" 
+                                        class="form-control" 
+                                        rows="3" 
+                                        maxlength="2000" 
                                         placeholder="Enter image description for accessibility..."></textarea>
                                     <div class="d-flex justify-content-between mt-1">
-                                        <small class="text-muted">Max 300 characters. Be concise but
-                                            descriptive.</small>
+                                        <small class="text-muted">Max 2,000 characters. Be concise but descriptive.</small>
                                         <small class="text-muted">
-                                            <span id="bluesky-alt-char-count">0</span>/300
+                                            <span id="bluesky-alt-char-count">0</span>/2000
                                         </small>
                                     </div>
                                 </div>
