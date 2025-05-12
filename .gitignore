@@ -1,6 +1,7 @@
 /images
 /uploads
+/output_queue
+/output_queue_archive
 /request_queue
-logs/
-output_queue/
-request_queue_archive/
+/request_queue_archive
+/logs

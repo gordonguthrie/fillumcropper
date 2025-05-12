@@ -1,7 +1,7 @@
 #!/bin/sh
 
-# Exit on error, treat unset variables as errors, and propagate pipe failures
-set -euo pipefail
+# Exit on error
+set -e
 
 # Debug flag
 DEBUG=TRUE
@@ -80,9 +80,15 @@ for file in "$REQUEST_QUEUE"/*_request.json; do
         mkdir -p "$output_dir"
         log_debug "Created output directory: $output_dir"
         
-        # Set input and output image paths
+        # Set input and output image paths with "cropped" prefix
         input_image="$IMAGES/$image"
-        output_image="$output_dir/$image"
+        # Generate the new filename with "cropped" prefix
+        filename_parts=$(echo "$image" | awk -F. '{if (NF>1) {print substr($0, 1, length($0)-length($NF)-1), $NF} else {print $0, ""}}')
+        filename_base=$(echo "$filename_parts" | cut -d' ' -f1)
+        filename_ext=$(echo "$filename_parts" | cut -d' ' -f2)
+        cropped_image="cropped_${image}"
+        output_image="$output_dir/$cropped_image"
+        
         log_debug "Input image: $input_image, Output image: $output_image"
         
         # Execute ImageMagick command to crop and resize
@@ -90,8 +96,8 @@ for file in "$REQUEST_QUEUE"/*_request.json; do
         convert "$input_image" -crop "$crop" -resize "$resize" "$output_image"
         log_debug "ImageMagick conversion completed"
         
-        # Create JSON metadata file
-        metadata="{\"image\":\"$image\",\"post\":\"$post\",\"altText\":\"$alt_text\"}"
+        # Create JSON metadata file with the new cropped filename
+        metadata="{\"image\":\"$cropped_image\",\"originalImage\":\"$image\",\"post\":\"$post\",\"altText\":\"$alt_text\"}"
         echo "$metadata" > "$output_dir/metadata.json"
         log_debug "Created metadata.json file in $output_dir"
       else

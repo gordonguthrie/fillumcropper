@@ -1,0 +1,251 @@
+#!/bin/sh
+
+# Exit on error, treat unset variables as errors, and propagate pipe failures
+set -e
+
+# Base directory
+BASE_DIR="/home/gordon/fillumcropper"
+
+# Debug mode - set to TRUE to enable debug logging, FALSE to disable
+DEBUG=FALSE
+
+# Log directory and file
+LOG_DIR="$BASE_DIR/logs"
+mkdir -p "$LOG_DIR"
+LOG_FILE="$LOG_DIR/bluesky_posting.log"
+
+# Debug logging function
+debug_log() {
+    if [ "$DEBUG" = "TRUE" ]; then
+        echo "[DEBUG] $(date): $1" | tee -a "$LOG_FILE"
+    fi
+}
+
+# Error logging function (always logs regardless of DEBUG setting)
+error_log() {
+    echo "[ERROR] $(date): $1" | tee -a "$LOG_FILE"
+}
+
+# Log API response function
+log_response() {
+    response_type="$1"
+    response_data="$2"
+    if [ "$DEBUG" = "TRUE" ]; then
+        echo "===== $response_type RESPONSE $(date) =====" >> "$LOG_FILE"
+        echo "$response_data" >> "$LOG_FILE"
+        echo "=========================================" >> "$LOG_FILE"
+    fi
+}
+
+# Log API error function (always logs regardless of DEBUG setting)
+log_error_response() {
+    response_type="$1"
+    response_data="$2"
+    error_message="$3"
+    
+    echo "===== $response_type ERROR $(date) =====" >> "$LOG_FILE"
+    echo "Error: $error_message" >> "$LOG_FILE"
+    echo "Response data:" >> "$LOG_FILE"
+    echo "$response_data" >> "$LOG_FILE"
+    echo "=========================================" >> "$LOG_FILE"
+}
+
+debug_log "Script started"
+
+# Load Bluesky API credentials from environment file
+CREDENTIALS_FILE="$BASE_DIR/.env.bluesky"
+if [ ! -f "$CREDENTIALS_FILE" ]; then
+    error_msg="Credentials file not found at $CREDENTIALS_FILE"
+    error_log "$error_msg"
+    exit 1
+fi
+
+# Source the credentials file
+. "$CREDENTIALS_FILE"
+
+# Check if credentials are properly loaded
+if [ -z "$BLUESKY_IDENTIFIER" ] || [ -z "$BLUESKY_PASSWORD" ]; then
+    error_msg="Bluesky credentials not properly set in $CREDENTIALS_FILE"
+    error_log "$error_msg"
+    exit 1
+fi
+
+debug_log "Using Bluesky account: $BLUESKY_IDENTIFIER"
+
+# Ensure archive directory exists
+mkdir -p "$BASE_DIR/output_queue_archive/bluesky"
+debug_log "Ensured archive directory exists: $BASE_DIR/output_queue_archive/bluesky"
+
+# Get current timestamp for comparison
+CURRENT_TIMESTAMP=$(date +"%y_%m_%d_%H_%M_%S")
+debug_log "Current timestamp: $CURRENT_TIMESTAMP"
+
+# Process directories in timestamp order
+debug_log "Searching for directories in $BASE_DIR/output_queue/bluesky/"
+find "$BASE_DIR/output_queue/bluesky/" -mindepth 1 -maxdepth 1 -type d | sort | while read dir; do
+    # Extract timestamp from directory name
+    dir_timestamp=$(basename "$dir")
+    debug_log "Processing directory: $dir (timestamp: $dir_timestamp)"
+    
+    # Skip if directory timestamp is in the future
+    if [ "$dir_timestamp" \> "$CURRENT_TIMESTAMP" ]; then
+        debug_log "Skipping future-dated directory: $dir"
+        continue
+    fi
+    
+    # Read metadata
+    metadata_file="$dir/metadata.json"
+    if [ ! -f "$metadata_file" ]; then
+        error_msg="metadata.json not found in $dir"
+        error_log "$error_msg"
+        exit 1
+    fi
+    
+    debug_log "Reading metadata from: $metadata_file"
+    
+    # Parse metadata
+    image_filename=$(jq -r '.image' "$metadata_file")
+    post_text=$(jq -r '.post' "$metadata_file")
+    alt_text=$(jq -r '.altText' "$metadata_file")
+    
+    post_text_len=$(echo "$post_text" | wc -c)
+    alt_text_len=$(echo "$alt_text" | wc -c)
+    debug_log "Metadata parsed - Image: $image_filename, Post length: $post_text_len chars, Alt text length: $alt_text_len chars"
+    
+    # Check if image exists
+    image_path="$dir/$image_filename"
+    if [ ! -f "$image_path" ]; then
+        error_msg="Image $image_filename not found in $dir"
+        error_log "$error_msg"
+        exit 1
+    fi
+    
+    # Replace the existing image size calculation line with this:
+    image_size_bytes=$(stat -c%s "$image_path")
+    image_size_mb=$(awk "BEGIN {printf \"%.2f\", $image_size_bytes/1048576}")
+    debug_log "Image details: $image_filename (Size: ${image_size_mb}MB, Raw bytes: $image_size_bytes)"
+    debug_log "Loading image from full path: $image_path"
+    
+    # Encode image to base64
+    image_base64=$(base64 -w 0 "$image_path")
+    image_base64_len=$(echo "$image_base64" | wc -c)
+    debug_log "Image encoded to base64 (length: $image_base64_len)"
+    
+    # Create temporary JSON file for the API request
+    temp_json=$(mktemp)
+    debug_log "Created temporary JSON file: $temp_json"
+    
+    cat > "$temp_json" << EOF
+{
+  "collection": "app.bsky.feed.post",
+  "repo": "$BLUESKY_IDENTIFIER",
+  "record": {
+    "\$type": "app.bsky.feed.post",
+    "text": "$post_text",
+    "createdAt": "$(date -u +"%Y-%m-%dT%H:%M:%S.%3NZ")",
+    "embed": {
+      "\$type": "app.bsky.embed.images",
+      "images": [
+        {
+          "alt": "$alt_text",
+          "image": {
+            "\$type": "blob",
+            "ref": {
+              "\$link": "WILL_BE_REPLACED_BY_UPLOAD"
+            },
+            "mimeType": "image/png",
+            "size": $(stat -c%s "$image_path")
+          }
+        }
+      ]
+    }
+  }
+}
+EOF
+
+    debug_log "Prepared JSON payload for Bluesky API"
+
+    # First, authenticate with Bluesky
+    debug_log "Authenticating with Bluesky..."
+    auth_response=$(curl -s -X POST "https://bsky.social/xrpc/com.atproto.server.createSession" \
+      -H "Content-Type: application/json" \
+      -d "{\"identifier\":\"$BLUESKY_IDENTIFIER\",\"password\":\"$BLUESKY_PASSWORD\"}")
+    
+    # Log the authentication response
+    log_response "AUTHENTICATION" "$auth_response"
+    
+    access_jwt=$(echo "$auth_response" | jq -r '.accessJwt')
+    
+    if [ -z "$access_jwt" ] || [ "$access_jwt" = "null" ]; then
+        error_msg="Failed to authenticate with Bluesky"
+        error_log "$error_msg"
+        log_error_response "AUTHENTICATION" "$auth_response" "$error_msg"
+        exit 1
+    fi
+    
+    access_jwt_len=$(echo "$access_jwt" | wc -c)
+    debug_log "Successfully authenticated with Bluesky (JWT length: $access_jwt_len)"
+    
+    # Upload the image
+    debug_log "Uploading image to Bluesky..."
+    upload_response=$(curl -s -X POST "https://bsky.social/xrpc/com.atproto.repo.uploadBlob" \
+      -H "Content-Type: image/png" \
+      -H "Authorization: Bearer $access_jwt" \
+      --data-binary @"$image_path")
+    
+    # Log the upload response
+    log_response "IMAGE_UPLOAD" "$upload_response"
+    
+    blob_ref=$(echo "$upload_response" | jq -r '.blob.ref["$link"]')
+
+    if [ -z "$blob_ref" ] || [ "$blob_ref" = "null" ]; then
+        error_msg="Failed to upload image to Bluesky"
+        error_log "$error_msg"
+        log_error_response "IMAGE_UPLOAD" "$upload_response" "$error_msg"
+        exit 1
+    fi
+    
+    debug_log "Successfully uploaded image to Bluesky. Blob reference: $blob_ref"
+    
+    # Update the JSON with the blob reference
+    sed -i "s/WILL_BE_REPLACED_BY_UPLOAD/$blob_ref/g" "$temp_json"
+    debug_log "Updated JSON payload with blob reference"
+    
+    # Create the post
+    debug_log "Creating post on Bluesky..."
+    post_response=$(curl -s -X POST "https://bsky.social/xrpc/com.atproto.repo.createRecord" \
+      -H "Content-Type: application/json" \
+      -H "Authorization: Bearer $access_jwt" \
+      -d @"$temp_json")
+    
+    # Log the post response
+    log_response "POST_CREATION" "$post_response"
+    
+    # Clean up temp file
+    rm "$temp_json"
+    debug_log "Removed temporary JSON file"
+    
+    # Check if post was successful
+    if echo "$post_response" | jq -e '.uri' > /dev/null; then
+        post_uri=$(echo "$post_response" | jq -r '.uri')
+        success_msg="Successfully posted to Bluesky: $dir"
+        echo "$success_msg"
+        debug_log "Post successful. URI: $post_uri"
+        
+        # Move directory to archive
+        archive_dir="$BASE_DIR/output_queue_archive/bluesky/$(basename "$dir")"
+        debug_log "Moving directory to archive: $dir -> $archive_dir"
+        mv "$dir" "$archive_dir"
+        echo "Moved $dir to $archive_dir"
+        debug_log "Directory successfully moved to archive"
+    else
+        error_msg="Failed to post to Bluesky"
+        error_log "$error_msg"
+        log_error_response "POST_CREATION" "$post_response" "$error_msg"
+        exit 1
+    fi
+    
+    debug_log "Completed processing for directory: $dir"
+done
+
+debug_log "Script completed successfully"

@@ -55,11 +55,11 @@ $(document).ready(function () {
       
   // Social media platform dimensions (width, height)
   const platformDimensions = {
-    bluesky: { width: 1200, height: 675 },
+    bluesky: { width: 800, height: 800 },
     instagram: { width: 1080, height: 1080 },
-    facebook: { width: 1200, height: 630 },
-    threads: { width: 1080, height: 1350 },
-    twitter: { width: 1200, height: 675 },
+    facebook: { width: 1080, height: 1350 },
+    threads: { width: 1440, height: 1920 },
+    twitter: { width: 1600, height: 900 },
   };
 
   // Get URL parameters
@@ -209,7 +209,8 @@ $("#confirmPostBtn").off("click").on("click", function() {
           // Hide the modal
           const postConfirmDialog = bootstrap.Modal.getInstance(document.getElementById('postConfirmDialog'));
           postConfirmDialog.hide();
-      },
+          // Redirect to index.html after successful post
+          window.location.href = '/index.html';      },
       error: function(xhr, status, error) {
           console.error("Error details:", xhr, status, error);
           // Show error message
