@@ -18,8 +18,10 @@ $(document).ready(function () {
         const blueskyAltText = $("#bluesky-alt-text").val()
         const blueskyScheduleTime = $("#bluesky-schedule-time").val()
       
-        // Get all platform names except Bluesky
-        const platforms = Object.keys(platformDimensions).filter(platform => platform !== "bluesky")
+        // Get all platform names except Bluesky and Facebook
+        const platforms = Object.keys(platformDimensions).filter(platform => 
+          platform !== "bluesky" && platform !== "facebook"
+        )
       
         // Copy values to all other platforms
         platforms.forEach(platform => {
@@ -51,8 +53,7 @@ $(document).ready(function () {
           $button.html(originalText)
           $button.addClass('btn-outline-primary').removeClass('btn-success')
         }, 2000)
-      })
-      
+      })      
   // Social media platform dimensions (width, height)
   const platformDimensions = {
     bluesky: { width: 800, height: 800 },

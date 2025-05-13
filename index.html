@@ -1,18 +1,18 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>ECVS</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet"
+        integrity="sha384-GLhlTQ8iRABdZLl6O3oVMWSktQOp6b7In1Zl3/Jr59b6EGGoI1aFkw7cmDA6j6gD" crossorigin="anonymous">
     <style>
-        .logo-container {
-            text-align: center;
-            margin: 20px 0;
+        /* Layout and containers */
+        .container {
+            margin: 0 auto;
         }
-        .logo-container img {
-            max-width: 200px; /* Adjust the size as needed */
-            height: auto;
-        }
+
         .upload-container {
             border: 2px dashed #ccc;
             border-radius: 5px;
@@ -20,34 +20,81 @@
             text-align: center;
             margin-bottom: 20px;
         }
+
+        /* Logo and branding */
+        .logo-container {
+            margin: 20px 0;
+            display: flex;
+            flex-direction: row;
+            align-items: center; /* This centers items vertically */
+            justify-content: space-between;
+            width: 100%;
+        }
+
+        .logo-container img {
+            max-width: 150px;
+            height: auto;
+            margin: 0 15px;
+        }
+
+        .beta-label {
+            color: red;
+            margin: 0;
+        }
+
+        /* Social links */
+        .social-links {
+            display: flex;
+            align-items: center;
+        }
+
+        .social-links a {
+            margin: 0 5px;
+            text-decoration: none;
+            padding: 5px;
+        }
+
+        /* Image display */
         .image-preview img {
             max-height: 500px;
             object-fit: contain;
         }
+
+        .image-actions {
+            margin-top: 15px;
+            text-align: center;
+        }
+
+        /* Gallery */
         .gallery img {
             height: 200px;
             object-fit: cover;
             cursor: pointer;
             transition: transform 0.2s;
         }
+
         .gallery img:hover {
             transform: scale(1.03);
-            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
-        }
-        .image-actions {
-            margin-top: 15px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
         }
     </style>
 </head>
+
 <body>
-    <div class="logo-container">
-        <a href="/">
-            <img src="./NEW LOGO PNG.png" alt="ECVS Logo">
-        </a>
-    </div>
-    
-    <!-- Rest of your content -->
-        
+    <div class="container">
+        <div class="logo-container">
+            <h2 class="beta-label">Beta Version For Testing</h2>
+            <a href="/" class="logo-link">
+                <img src="./NEW LOGO PNG.png" alt="ECVS Logo">
+            </a>
+            <div class="social-links">
+                <a href="https://bsky.app/profile/ecvs-dev.bsky.social" class="me-3">BlueSky</a>
+                <a href="https://www.instagram.com/cookalula/" class="me-3">Instagram</a>
+                <a href="https://www.threads.com/@cookalula" class="me-3">Threads</a>
+                <a href="https://x.com/Ecvsdev">Twitter</a>
+            </div>
+        </div>
+
         <div class="upload-container bg-light">
             <form action="/cgi-bin/upload.cgi" method="post" enctype="multipart/form-data" class="p-3">
                 <h2 class="h4 mb-3 text-center">Upload a new image</h2>
@@ -57,15 +104,15 @@
                 <button type="submit" class="btn btn-primary">Upload Image</button>
             </form>
         </div>
-        
+
         <div class="image-preview mt-4" id="latest-image">
             <h2 class="h4 mb-3 text-center">Current Image</h2>
             <div id="preview-container" class="text-center"></div>
-            <div class="image-actions text-center" id="image-actions">
+            <div class="image-actions" id="image-actions">
                 <!-- Resize button will be added here when an image is selected -->
             </div>
         </div>
-        
+
         <div class="mt-5" id="gallery-section">
             <h2 class="h4 mb-3 text-center">Image Gallery</h2>
             <div class="gallery row row-cols-1 row-cols-sm-2 row-cols-md-3 row-cols-lg-4 g-3" id="image-gallery">
@@ -75,25 +122,26 @@
     </div>
 
     <!-- Bootstrap 5 JS Bundle with Popper -->
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js" 
-            integrity="sha384-w76AqPfDkMBDXo30jS1Sgez6pr3x5MlQ1ZAGC+nuZB+EYdgRZgiwxhTBTkF7CXvN" crossorigin="anonymous"></script>
-    
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"
+        integrity="sha384-w76AqPfDkMBDXo30jS1Sgez6pr3x5MlQ1ZAGC+nuZB+EYdgRZgiwxhTBTkF7CXvN"
+        crossorigin="anonymous"></script>
+
     <script>
         // Check for newly uploaded image on page load
-        window.onload = function() {
+        window.onload = function () {
             // Get URL parameters
             const urlParams = new URLSearchParams(window.location.search);
             const newImage = urlParams.get('image');
-            
+
             // If there's a new image, display it
             if (newImage) {
                 displayCurrentImage(newImage);
             }
-            
+
             // Load existing images
             loadGallery();
         };
-        
+
         // Function to display the current image
         function displayCurrentImage(imageName) {
             const previewContainer = document.getElementById('preview-container');
@@ -102,18 +150,18 @@
             img.className = 'img-fluid';
             previewContainer.innerHTML = '';
             previewContainer.appendChild(img);
-            
+
             // Add resize button
             const actionsContainer = document.getElementById('image-actions');
             actionsContainer.innerHTML = '';
-            
+
             const resizeButton = document.createElement('a');
             resizeButton.href = '/crop.html?image=' + encodeURIComponent(imageName);
             resizeButton.className = 'btn btn-primary mt-3';
             resizeButton.textContent = 'Resize Image';
             actionsContainer.appendChild(resizeButton);
         }
-        
+
         // Function to load gallery images
         function loadGallery() {
             fetch('/cgi-bin/list_images.cgi')
@@ -121,29 +169,29 @@
                 .then(images => {
                     const gallery = document.getElementById('image-gallery');
                     gallery.innerHTML = '';
-                    
+
                     images.forEach(image => {
                         const col = document.createElement('div');
                         col.className = 'col';
-                        
+
                         const card = document.createElement('div');
                         card.className = 'card h-100';
-                        
+
                         const img = document.createElement('img');
                         img.src = '/uploads/' + image;
                         img.alt = image;
                         img.className = 'card-img-top';
-                        
+
                         // Add click event to make the image the current image
-                        img.addEventListener('click', function() {
+                        img.addEventListener('click', function () {
                             // Update URL with the selected image
                             const newUrl = window.location.pathname + '?image=' + encodeURIComponent(image);
                             window.history.pushState({}, '', newUrl);
-                            
+
                             // Display the selected image as current image
                             displayCurrentImage(image);
                         });
-                        
+
                         card.appendChild(img);
                         col.appendChild(card);
                         gallery.appendChild(col);
@@ -153,11 +201,5 @@
         }
     </script>
 </body>
+
 </html>
-<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" 
-      rel="stylesheet" 
-      integrity="sha384-GLhlTQ8iRABdZLl6O3oVMWSktQOp6b7In1Zl3/Jr59b6EGGoI1aFkw7cmDA6j6gD" 
-      crossorigin="anonymous">
-<div class="container">
-    <!-- All content goes here -->
-</div>

@@ -1,0 +1,228 @@
+#!/bin/sh
+
+# Exit on error, treat unset variables as errors, and propagate pipe failures
+set -e
+
+# Base directory
+BASE_DIR="/home/gordon/fillumcropper"
+
+# Debug mode - set to TRUE to enable debug logging, FALSE to disable
+DEBUG=FALSE
+
+# Log directory and file
+LOG_DIR="$BASE_DIR/logs"
+mkdir -p "$LOG_DIR"
+LOG_FILE="$LOG_DIR/twitter_posting.log"
+
+# Debug logging function
+debug_log() {
+    if [ "$DEBUG" = "TRUE" ]; then
+        echo "[DEBUG] $(date): $1" | tee -a "$LOG_FILE"
+    fi
+}
+
+# Error logging function (always logs regardless of DEBUG setting)
+error_log() {
+    echo "[ERROR] $(date): $1" | tee -a "$LOG_FILE"
+}
+
+# Log API response function
+log_response() {
+    response_type="$1"
+    response_data="$2"
+    if [ "$DEBUG" = "TRUE" ]; then
+        echo "===== $response_type RESPONSE $(date) =====" >> "$LOG_FILE"
+        echo "$response_data" >> "$LOG_FILE"
+        echo "=========================================" >> "$LOG_FILE"
+    fi
+}
+
+# Log API error function (always logs regardless of DEBUG setting)
+log_error_response() {
+    response_type="$1"
+    response_data="$2"
+    error_message="$3"
+    
+    echo "===== $response_type ERROR $(date) =====" >> "$LOG_FILE"
+    echo "Error: $error_message" >> "$LOG_FILE"
+    echo "Response data:" >> "$LOG_FILE"
+    echo "$response_data" >> "$LOG_FILE"
+    echo "=========================================" >> "$LOG_FILE"
+}
+
+debug_log "Script started"
+
+# Load Twitter API credentials from environment file
+CREDENTIALS_FILE="$BASE_DIR/.env.twitter"
+if [ ! -f "$CREDENTIALS_FILE" ]; then
+    error_msg="Credentials file not found at $CREDENTIALS_FILE"
+    error_log "$error_msg"
+    exit 1
+fi
+
+# Source the credentials file
+. "$CREDENTIALS_FILE"
+
+# Check if credentials are properly loaded
+if [ -z "$TWITTER_IDENTIFIER" ] || [ -z "$TWITTER_PASSWORD" ]; then
+    error_msg="Twitter credentials not properly set in $CREDENTIALS_FILE"
+    error_log "$error_msg"
+    exit 1
+fi
+
+debug_log "Using Twitter account: $TWITTER_IDENTIFIER"
+
+# Ensure archive directory exists
+mkdir -p "$BASE_DIR/output_queue_archive/twitter"
+debug_log "Ensured archive directory exists: $BASE_DIR/output_queue_archive/twitter"
+
+# Get current timestamp for comparison
+CURRENT_TIMESTAMP=$(date +"%y_%m_%d_%H_%M_%S")
+debug_log "Current timestamp: $CURRENT_TIMESTAMP"
+
+# Process directories in timestamp order
+debug_log "Searching for directories in $BASE_DIR/output_queue/twitter/"
+find "$BASE_DIR/output_queue/twitter/" -mindepth 1 -maxdepth 1 -type d | sort | while read dir; do
+    # Extract timestamp from directory name
+    dir_timestamp=$(basename "$dir")
+    debug_log "Processing directory: $dir (timestamp: $dir_timestamp)"
+    
+    # Skip if directory timestamp is in the future
+    if [ "$dir_timestamp" \> "$CURRENT_TIMESTAMP" ]; then
+        debug_log "Skipping future-dated directory: $dir"
+        continue
+    fi
+    
+    # Read metadata
+    metadata_file="$dir/metadata.json"
+    if [ ! -f "$metadata_file" ]; then
+        error_msg="metadata.json not found in $dir"
+        error_log "$error_msg"
+        exit 1
+    fi
+    
+    debug_log "Reading metadata from: $metadata_file"
+    
+    # Parse metadata
+    image_filename=$(jq -r '.image' "$metadata_file")
+    post_text=$(jq -r '.post' "$metadata_file")
+    alt_text=$(jq -r '.altText' "$metadata_file")
+    
+    post_text_len=$(echo "$post_text" | wc -c)
+    alt_text_len=$(echo "$alt_text" | wc -c)
+    debug_log "Metadata parsed - Image: $image_filename, Post length: $post_text_len chars, Alt text length: $alt_text_len chars"
+    
+    # Check if image exists
+    image_path="$dir/$image_filename"
+    if [ ! -f "$image_path" ]; then
+        error_msg="Image $image_filename not found in $dir"
+        error_log "$error_msg"
+        exit 1
+    fi
+    
+    # Get image details
+    image_size_bytes=$(stat -c%s "$image_path")
+    image_size_mb=$(awk "BEGIN {printf \"%.2f\", $image_size_bytes/1048576}")
+    debug_log "Image details: $image_filename (Size: ${image_size_mb}MB, Raw bytes: $image_size_bytes)"
+    debug_log "Loading image from full path: $image_path"
+    
+    # Create temporary file for the API request
+    temp_file=$(mktemp)
+    debug_log "Created temporary file: $temp_file"
+    
+    # Step 1: Authenticate with Twitter
+    debug_log "Authenticating with Twitter..."
+    
+    auth_response=$(curl -s -X POST "https://api.twitter.com/2/oauth2/token" \
+      -H "Content-Type: application/x-www-form-urlencoded" \
+      -d "grant_type=password&username=$TWITTER_IDENTIFIER&password=$TWITTER_PASSWORD")
+    
+    # Log the authentication response
+    log_response "AUTHENTICATION" "$auth_response"
+    
+    access_token=$(echo "$auth_response" | jq -r '.access_token')
+    
+    if [ -z "$access_token" ] || [ "$access_token" = "null" ]; then
+        error_msg="Failed to authenticate with Twitter"
+        error_log "$error_msg"
+        log_error_response "AUTHENTICATION" "$auth_response" "$error_msg"
+        exit 1
+    fi
+    
+    access_token_len=$(echo "$access_token" | wc -c)
+    debug_log "Successfully authenticated with Twitter (token length: $access_token_len)"
+    
+    # Step 2: Upload the image to Twitter
+    debug_log "Uploading image to Twitter..."
+    
+    # Create multipart form data for media upload
+    upload_response=$(curl -s -X POST "https://upload.twitter.com/1.1/media/upload.json" \
+      -H "Authorization: Bearer $access_token" \
+      -F "media=@$image_path" \
+      -F "alt_text={\"text\":\"$alt_text\"}")
+    
+    # Log the upload response
+    log_response "MEDIA_UPLOAD" "$upload_response"
+    
+    # Extract media ID
+    media_id=$(echo "$upload_response" | jq -r '.media_id_string')
+    
+    if [ -z "$media_id" ] || [ "$media_id" = "null" ]; then
+        error_msg="Failed to upload image to Twitter"
+        error_log "$error_msg"
+        log_error_response "MEDIA_UPLOAD" "$upload_response" "$error_msg"
+        exit 1
+    fi
+    
+    debug_log "Successfully uploaded image to Twitter. Media ID: $media_id"
+    
+    # Step 3: Create the tweet with the uploaded media
+    debug_log "Creating tweet with uploaded media..."
+    
+    # Create JSON payload for the tweet
+    cat > "$temp_file" << EOF
+{
+  "text": "$post_text",
+  "media": {
+    "media_ids": ["$media_id"]
+  }
+}
+EOF
+    
+    # Post the tweet
+    tweet_response=$(curl -s -X POST "https://api.twitter.com/2/tweets" \
+      -H "Authorization: Bearer $access_token" \
+      -H "Content-Type: application/json" \
+      -d @"$temp_file")
+    
+    # Log the tweet response
+    log_response "TWEET_CREATION" "$tweet_response"
+    
+    # Clean up temp file
+    rm "$temp_file"
+    debug_log "Removed temporary file"
+    
+    # Check if tweet was successful
+    if echo "$tweet_response" | jq -e '.data.id' > /dev/null; then
+        tweet_id=$(echo "$tweet_response" | jq -r '.data.id')
+        success_msg="Successfully posted to Twitter: $dir"
+        echo "$success_msg"
+        debug_log "Tweet successful. ID: $tweet_id"
+        
+        # Move directory to archive
+        archive_dir="$BASE_DIR/output_queue_archive/twitter/$(basename "$dir")"
+        debug_log "Moving directory to archive: $dir -> $archive_dir"
+        mv "$dir" "$archive_dir"
+        echo "Moved $dir to $archive_dir"
+        debug_log "Directory successfully moved to archive"
+    else
+        error_msg="Failed to post to Twitter"
+        error_log "$error_msg"
+        log_error_response "TWEET_CREATION" "$tweet_response" "$error_msg"
+        exit 1
+    fi
+    
+    debug_log "Completed processing for directory: $dir"
+done
+
+debug_log "Script completed successfully"
